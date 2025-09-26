@@ -23,4 +23,34 @@ router.post('/', async (req, res) => {
   }
 });
 
+router.get('/by-coach/:coachId', async (req, res) => {
+  try {
+    const coach = await Coach.findOne({ coachId: req.params.coachId });
+    if (!coach) return res.status(404).json({ error: 'Coach not found' });
+
+    const sessions = await Session.find({ coach: coach._id }).populate('players');
+    res.json(sessions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/by-player/:playerId', async (req, res) => {
+  try {
+    // Find the player by their readable playerId
+    const player = await Player.findOne({ playerId: req.params.playerId });
+    if (!player) return res.status(404).json({ error: 'Player not found' });
+
+    // Find sessions that include this player's ObjectId
+    const sessions = await Session.find({ players: player._id })
+      .populate('coach')
+      .populate('players');
+
+    res.json(sessions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 module.exports = router;
