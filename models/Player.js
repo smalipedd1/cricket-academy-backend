@@ -36,4 +36,12 @@ const playerSchema = new mongoose.Schema({
   }
 });
 
+playerSchema.pre('save', async function (next) {
+  if (!this.playerId) {
+    const count = await mongoose.model('Player').countDocuments();
+    this.playerId = `PLR${1000 + count + 1}`;
+  }
+  next();
+});
+
 module.exports = mongoose.model('Player', playerSchema);

@@ -23,4 +23,14 @@ router.post('/', async (req, res) => {
   }
 });
 
+router.get('/by-id/:coachId', async (req, res) => {
+  try {
+    const coach = await Coach.findOne({ coachId: req.params.coachId });
+    if (!coach) return res.status(404).json({ error: 'Coach not found' });
+    res.json(coach);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

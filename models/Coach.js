@@ -21,4 +21,12 @@ const coachSchema = new mongoose.Schema({
   }
 });
 
+coachSchema.pre('save', async function (next) {
+  if (!this.coachId) {
+    const count = await mongoose.model('Coach').countDocuments();
+    this.coachId = `COACH${100 + count + 1}`;
+  }
+  next();
+});
+
 module.exports = mongoose.model('Coach', coachSchema);

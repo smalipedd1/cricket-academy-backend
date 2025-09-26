@@ -41,4 +41,14 @@ router.patch('/:id/status', async (req, res) => {
   }
 });
 
+router.get('/by-id/:playerId', async (req, res) => {
+  try {
+    const player = await Player.findOne({ playerId: req.params.playerId });
+    if (!player) return res.status(404).json({ error: 'Player not found' });
+    res.json(player);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
