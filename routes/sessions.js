@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Session = require('../models/Session');
+const Coach = require('../models/Coach');
+const Player = require('../models/Player');
 
 // GET all sessions
 router.get('/', async (req, res) => {
