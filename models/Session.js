@@ -16,8 +16,9 @@ const sessionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Player'
   }],
-  notes: { type: String }
-performance: [{
+  notes: { type: String },
+
+  performance: [{
     player: { type: mongoose.Schema.Types.ObjectId, ref: 'Player' },
     rating: { type: Number, min: 1, max: 10 },
     notes: String
