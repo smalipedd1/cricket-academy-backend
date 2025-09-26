@@ -29,4 +29,7 @@ const PORT = process.env.PORT || 5000;
 const playerRoutes = require('./routes/players');
 app.use('/api/players', playerRoutes);
 
+const coachRoutes = require('./routes/coaches');
+app.use('/api/coaches', coachRoutes);
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
