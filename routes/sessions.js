@@ -54,5 +54,28 @@ router.get('/by-player/:playerId', async (req, res) => {
   }
 });
 
+router.get('/', async (req, res) => {
+  try {
+    const { focusArea, startDate, endDate } = req.query;
+    const filter = {};
+
+    if (focusArea) filter.focusArea = focusArea;
+    if (startDate && endDate) {
+      filter.date = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      };
+    }
+
+    const sessions = await Session.find(filter)
+      .populate('coach')
+      .populate('players')
+      .populate('performance.player');
+
+    res.json(sessions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 module.exports = router;
