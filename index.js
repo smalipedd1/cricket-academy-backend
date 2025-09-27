@@ -35,4 +35,7 @@ app.use('/api/coaches', coachRoutes);
 const sessionRoutes = require('./routes/sessions');
 app.use('/api/sessions', sessionRoutes);
 
+const authRoutes = require('./routes/auth');
+app.use('/api', authRoutes);
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
