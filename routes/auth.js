@@ -76,5 +76,10 @@ router.post('/admin', auth, async (req, res) => {
   }
 });
 
+const token = jwt.sign(
+  { id: admin._id, role: 'admin' }, // ✅ Include role here
+  SECRET,
+  { expiresIn: '1h' }
+);
 
 module.exports = router;
