@@ -15,14 +15,14 @@ router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    // ✅ Declare the admin variable
+    // ✅ Declare the admin variable first
     const admin = await Admin.findOne({ username });
     if (!admin) return res.status(401).json({ error: 'Invalid credentials' });
 
     const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
 
-    // ✅ Include role in token payload
+    // ✅ Include role in the token payload
     const token = jwt.sign(
       { id: admin._id, role: 'admin' },
       SECRET,
