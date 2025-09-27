@@ -1,10 +1,13 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 
 const playerSchema = new mongoose.Schema({
   playerId: {
   type: String,
   unique: true,
   },
+  username: { type: String, unique: true, required: true },
+  password: { type: String, required: true },
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   age: { type: Number, required: true },
@@ -40,6 +43,12 @@ playerSchema.pre('save', async function (next) {
     const count = await mongoose.model('Player').countDocuments();
     this.playerId = `PLR${1000 + count + 1}`;
   }
+  next();
+});
+
+playerSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
+  this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
