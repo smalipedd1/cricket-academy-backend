@@ -8,6 +8,11 @@ const Session = require('../models/Session');
 const Player = require('../models/Player');
 const Coach = require('../models/Coach');
 
+const token = jwt.sign(
+  { id: admin._id, role: 'admin' }, // ✅ Include role here
+  SECRET,
+  { expiresIn: '1h' }
+);
 
 const SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
@@ -65,16 +70,14 @@ router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    // ✅ Declare the admin variable first
-    const admin = await Admin.findOne({ username });
-    if (!admin) return res.status(401).json({ error: 'Invalid credentials' });
+    const foundAdmin = await Admin.findOne({ username });
+    if (!foundAdmin) return res.status(401).json({ error: 'Invalid credentials' });
 
-    const isMatch = await bcrypt.compare(password, admin.password);
+    const isMatch = await bcrypt.compare(password, foundAdmin.password);
     if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
 
-    // ✅ Include role in the token payload
     const token = jwt.sign(
-      { id: admin._id, role: 'admin' },
+      { id: foundAdmin._id, role: 'admin' },
       SECRET,
       { expiresIn: '1h' }
     );
@@ -85,12 +88,5 @@ router.post('/login', async (req, res) => {
   }
 });
 
-
-
-const token = jwt.sign(
-  { id: admin._id, role: 'admin' }, // ✅ Include role here
-  SECRET,
-  { expiresIn: '1h' }
-);
 
 module.exports = router;
