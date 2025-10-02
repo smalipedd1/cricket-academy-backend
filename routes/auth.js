@@ -33,6 +33,29 @@ router.post('/login', async (req, res) => {
   }
 });
 
+router.post('/coach/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    const coach = await Coach.findOne({ username });
+    if (!coach) return res.status(401).json({ error: 'Invalid credentials' });
+
+    const isMatch = await bcrypt.compare(password, coach.password);
+    if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
+
+    const token = jwt.sign(
+      { id: coach._id, role: 'coach' },
+      SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({ token });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 // ✅ Admin profile route
 router.get('/admin', auth, async (req, res) => {
   try {
