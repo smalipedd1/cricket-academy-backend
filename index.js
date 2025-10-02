@@ -26,6 +26,7 @@ app.use('/api/players', playerRoutes);
 
 const coachRoutes = require('./routes/coaches');
 app.use('/api/coaches', coachRoutes);
+app.use('/api/coach', require('./routes/coach'));
 
 const sessionRoutes = require('./routes/sessions');
 app.use('/api/sessions', sessionRoutes);
