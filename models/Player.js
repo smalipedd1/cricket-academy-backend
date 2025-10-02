@@ -35,8 +35,17 @@ const playerSchema = new mongoose.Schema({
     type: String,
     enum: ['Active', 'Inactive', 'Suspended', 'Graduated'],
     default: 'Active'
+  },
+ notes: [
+  {
+    coachId: { type: mongoose.Schema.Types.ObjectId, ref: 'Coach' },
+    content: String,
+    createdAt: { type: Date, default: Date.now }
   }
+]
+
 });
+
 
 playerSchema.pre('save', async function (next) {
   if (!this.playerId) {
