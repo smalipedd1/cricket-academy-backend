@@ -1,3 +1,10 @@
+const express = require('express');
+const router = express.Router();
+const auth = require('../middleware/auth');
+const Coach = require('../models/Coach');
+const Player = require('../models/Player');
+const Session = require('../models/Session');
+
 router.get('/', auth, async (req, res) => {
   const role = req.query.role;
   const userId = req.userId;
