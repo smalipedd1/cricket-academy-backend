@@ -4,7 +4,6 @@ const auth = require('../middleware/auth');
 const Coach = require('../models/Coach');
 const Session = require('../models/Session');
 const Player = require('../models/Player');
-const { rating, notes, focusArea } = req.body;
 
 //
 // 🧭 COACH DASHBOARD
