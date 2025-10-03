@@ -238,4 +238,29 @@ router.get('/player/:playerId/profile-ui', auth, async (req, res) => {
   }
 });
 
+router.get('/player/:playerId/progress-ui', auth, async (req, res) => {
+  if (req.role !== 'coach') return res.status(403).json({ error: 'Access denied' });
+
+  try {
+    const sessions = await Session.find({ 'performance.player': req.params.playerId })
+      .select('date performance')
+      .sort({ date: 1 });
+
+    const timeline = sessions.flatMap(session =>
+      session.performance
+        .filter(p => p.player.toString() === req.params.playerId)
+        .map(p => ({
+          date: session.date.toISOString().split('T')[0],
+          rating: p.rating,
+          focusArea: p.focusArea,
+          notes: p.notes
+        }))
+    );
+
+    res.json(timeline);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
