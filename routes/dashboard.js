@@ -4,6 +4,7 @@ const auth = require('../middleware/auth');
 const Coach = require('../models/Coach');
 const Player = require('../models/Player');
 const Session = require('../models/Session');
+module.exports = router;
 
 router.get('/', auth, async (req, res) => {
   const role = req.query.role;
