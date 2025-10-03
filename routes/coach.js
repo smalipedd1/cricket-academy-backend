@@ -189,4 +189,53 @@ router.get('/dashboard-ui', auth, async (req, res) => {
   });
 });
 
+router.get('/player/:playerId/profile-ui', auth, async (req, res) => {
+  if (req.role !== 'coach') return res.status(403).json({ error: 'Access denied' });
+
+  try {
+    const player = await Player.findById(req.params.playerId).populate('notes.coachId', 'firstName lastName');
+    if (!player) return res.status(404).json({ error: 'Player not found' });
+
+    const sessions = await Session.find({ 'performance.player': req.params.playerId });
+
+    const progressEntries = sessions.flatMap(session =>
+      session.performance.filter(p => p.player.toString() === req.params.playerId)
+    );
+
+    const averageRating =
+      progressEntries.reduce((sum, p) => sum + (p.rating || 0), 0) / (progressEntries.length || 1);
+
+    const focusBreakdown = {};
+    progressEntries.forEach(p => {
+      if (p.focusArea) {
+        focusBreakdown[p.focusArea] = (focusBreakdown[p.focusArea] || 0) + 1;
+      }
+    });
+
+    const recentNotes = player.notes
+      .slice(-5)
+      .reverse()
+      .map(n => ({
+        coach: `${n.coachId.firstName} ${n.coachId.lastName}`,
+        content: n.content,
+        date: n.createdAt.toISOString().split('T')[0]
+      }));
+
+    res.json({
+      name: `${player.firstName} ${player.lastName}`,
+      age: player.age,
+      role: player.role,
+      academyLevel: player.academyLevel,
+      status: player.status,
+      recentNotes,
+      progressSummary: {
+        averageRating: Number(averageRating.toFixed(1)),
+        focusBreakdown
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
