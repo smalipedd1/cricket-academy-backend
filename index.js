@@ -35,4 +35,8 @@ app.use('/api', authRoutes);
 const playerAuthRoutes = require('./routes/playerAuth');
 app.use('/api/player', playerAuthRoutes);
 
+const dashboardRoutes = require('./routes/dashboard');
+app.use('/api/dashboard', dashboardRoutes);
+
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
