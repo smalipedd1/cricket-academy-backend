@@ -100,7 +100,9 @@ router.post('/admin', auth, async (req, res) => {
     const existing = await Admin.findOne({ username });
     if (existing) return res.status(400).json({ error: 'Username already exists' });
 
-    const newAdmin = new Admin({ username, password });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newAdmin = new Admin({ username, password: hashedPassword });
+
     await newAdmin.save();
     res.status(201).json({ message: 'Admin created successfully' });
   } catch (err) {
