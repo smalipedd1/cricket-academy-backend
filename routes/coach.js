@@ -151,4 +151,42 @@ router.get('/by-id/:coachId', auth, async (req, res) => {
   }
 });
 
+router.get('/dashboard-ui', auth, async (req, res) => {
+  if (req.role !== 'coach') return res.status(403).json({ error: 'Access denied' });
+
+  const coach = await Coach.findById(req.userId);
+  const sessions = await Session.find({ coach: req.userId }).sort({ date: -1 }).limit(5);
+  const players = await Player.find();
+
+  const recentSessions = sessions.map(s => ({
+    date: s.date,
+    focusArea: s.focusArea,
+    playerCount: s.performance.length
+  }));
+
+  const playerSessionCount = {};
+  sessions.forEach(s => {
+    s.performance.forEach(p => {
+      const id = p.player.toString();
+      playerSessionCount[id] = (playerSessionCount[id] || 0) + 1;
+    });
+  });
+
+  const topPlayers = Object.entries(playerSessionCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([id, count]) => {
+      const player = players.find(p => p._id.toString() === id);
+      return { name: `${player.firstName} ${player.lastName}`, sessions: count };
+    });
+
+  res.json({
+    coachName: `${coach.firstName} ${coach.lastName}`,
+    totalSessions: sessions.length,
+    totalPlayers: players.length,
+    recentSessions,
+    topPlayers
+  });
+});
+
 module.exports = router;
