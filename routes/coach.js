@@ -4,6 +4,7 @@ const auth = require('../middleware/auth');
 const Coach = require('../models/Coach');
 const Session = require('../models/Session');
 const Player = require('../models/Player');
+const { rating, notes, focusArea } = req.body;
 
 //
 // 🧭 COACH DASHBOARD
@@ -59,7 +60,7 @@ router.post('/session/:sessionId/performance/:playerId', auth, async (req, res) 
   if (req.role !== 'coach') return res.status(403).json({ error: 'Access denied' });
 
   const { sessionId, playerId } = req.params;
-  const { rating, notes } = req.body;
+  const { rating, notes, focusArea } = req.body;
 
   try {
     const session = await Session.findById(sessionId);
@@ -68,11 +69,18 @@ router.post('/session/:sessionId/performance/:playerId', auth, async (req, res) 
     const entry = session.performance.find(p => p.player.toString() === playerId);
 
     if (entry) {
-      entry.rating = rating;
-      entry.notes = notes;
-    } else {
-      session.performance.push({ player: playerId, rating, notes });
-    }
+  entry.rating = rating;
+  entry.notes = notes;
+  entry.focusArea = focusArea;
+} else {
+  session.performance.push({
+    player: playerId,
+    rating,
+    notes,
+    focusArea,
+    createdAt: new Date()
+  });
+}
 
     await session.save();
     res.json({ message: 'Performance note saved' });

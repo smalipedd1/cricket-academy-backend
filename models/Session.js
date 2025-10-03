@@ -18,11 +18,19 @@ const sessionSchema = new mongoose.Schema({
   }],
   notes: { type: String },
 
-  performance: [{
+  performance: [
+  {
     player: { type: mongoose.Schema.Types.ObjectId, ref: 'Player' },
-    rating: { type: Number, min: 1, max: 10 },
-    notes: String
-  }]
+    rating: Number,
+    notes: String,
+    focusArea: {
+      type: String,
+      enum: ['Batting', 'Bowling', 'Fielding', 'Fitness', 'Strategy']
+    },
+    createdAt: { type: Date, default: Date.now }
+  }
+]
+
 });
 
 module.exports = mongoose.model('Session', sessionSchema);
