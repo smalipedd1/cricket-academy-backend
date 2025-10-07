@@ -41,5 +41,31 @@ router.get('/sessions', auth, async (req, res) => {
   res.json(sessions);
 });
 
+router.get('/dashboard', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ message: 'Missing token' });
+
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, 'your_jwt_secret'); // use your actual secret
+    if (decoded.role !== 'player') return res.status(403).json({ message: 'Forbidden' });
+
+    // You can fetch real player data here using decoded.userId if needed
+    res.json({
+      name: 'Player One',
+      progress: {
+        fitness: 'Good',
+        batting: 'Improving',
+        bowling: 'Excellent'
+      },
+      upcomingSessions: [
+        { date: '2025-10-10', focusArea: 'Batting' },
+        { date: '2025-10-12', focusArea: 'Fitness' }
+      ]
+    });
+  } catch (err) {
+    res.status(401).json({ message: 'Invalid token' });
+  }
+});
 
 module.exports = router;
