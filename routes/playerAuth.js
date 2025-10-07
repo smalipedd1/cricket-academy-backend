@@ -47,7 +47,7 @@ router.get('/dashboard', async (req, res) => {
 
   const token = authHeader.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, 'your_jwt_secret'); // use your actual secret
+    const decoded = jwt.verify(token, SECRET); // ✅ use same secret
     if (decoded.role !== 'player') return res.status(403).json({ message: 'Forbidden' });
 
     // You can fetch real player data here using decoded.userId if needed
