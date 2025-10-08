@@ -36,6 +36,7 @@ const playerSchema = new mongoose.Schema({
     enum: ['Active', 'Inactive', 'Suspended', 'Graduated'],
     default: 'Active'
   },
+
  notes: [
   {
     coachId: { type: mongoose.Schema.Types.ObjectId, ref: 'Coach' },

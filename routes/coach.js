@@ -4,6 +4,8 @@ const auth = require('../middleware/auth');
 const Coach = require('../models/Coach');
 const Session = require('../models/Session');
 const Player = require('../models/Player');
+const jwt = require('jsonwebtoken');
+const SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
 //
 // 🧭 COACH DASHBOARD
@@ -260,6 +262,31 @@ router.get('/player/:playerId/progress-ui', auth, async (req, res) => {
     res.json(timeline);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+//
+// 🧭 COACH DASHBOARD (Simple UI)
+//
+router.get('/dashboard-lite', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ message: 'Missing token' });
+
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, SECRET);
+    if (decoded.role !== 'coach') return res.status(403).json({ message: 'Forbidden' });
+
+    res.json({
+      name: 'Coach Sharma',
+      assignedSessions: [
+        { date: '2025-10-10', focusArea: 'Batting', players: 12 },
+        { date: '2025-10-12', focusArea: 'Fitness', players: 8 }
+      ],
+      feedbackPending: 5
+    });
+  } catch (err) {
+    res.status(401).json({ message: 'Invalid token' });
   }
 });
 
