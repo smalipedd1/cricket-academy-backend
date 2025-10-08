@@ -1,18 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
+const { verifyRole } = require('../middleware/auth');
 const Coach = require('../models/Coach');
 const Session = require('../models/Session');
 const Player = require('../models/Player');
 const jwt = require('jsonwebtoken');
 const SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
-//
 // 🧭 COACH DASHBOARD
-//
-router.get('/dashboard', auth, async (req, res) => {
-  if (req.role !== 'coach') return res.status(403).json({ error: 'Access denied' });
-
+router.get('/dashboard', verifyRole('coach'), async (req, res) => {
   try {
     const coach = await Coach.findById(req.userId).select('-password');
     if (!coach) return res.status(404).json({ error: 'Coach not found' });
@@ -33,12 +29,8 @@ router.get('/dashboard', auth, async (req, res) => {
   }
 });
 
-//
 // 🗒 OVERALL PLAYER NOTE
-//
-router.post('/player/:playerId/note', auth, async (req, res) => {
-  if (req.role !== 'coach') return res.status(403).json({ error: 'Access denied' });
-
+router.post('/player/:playerId/note', verifyRole('coach'), async (req, res) => {
   const { playerId } = req.params;
   const { content } = req.body;
 
@@ -54,12 +46,8 @@ router.post('/player/:playerId/note', auth, async (req, res) => {
   res.json({ message: 'Player note added' });
 });
 
-//
 // 📊 SESSION PERFORMANCE NOTE
-//
-router.post('/session/:sessionId/performance/:playerId', auth, async (req, res) => {
-  if (req.role !== 'coach') return res.status(403).json({ error: 'Access denied' });
-
+router.post('/session/:sessionId/performance/:playerId', verifyRole('coach'), async (req, res) => {
   const { sessionId, playerId } = req.params;
   const { rating, notes, focusArea } = req.body;
 
@@ -70,18 +58,18 @@ router.post('/session/:sessionId/performance/:playerId', auth, async (req, res) 
     const entry = session.performance.find(p => p.player.toString() === playerId);
 
     if (entry) {
-  entry.rating = rating;
-  entry.notes = notes;
-  entry.focusArea = focusArea;
-} else {
-  session.performance.push({
-    player: playerId,
-    rating,
-    notes,
-    focusArea,
-    createdAt: new Date()
-  });
-}
+      entry.rating = rating;
+      entry.notes = notes;
+      entry.focusArea = focusArea;
+    } else {
+      session.performance.push({
+        player: playerId,
+        rating,
+        notes,
+        focusArea,
+        createdAt: new Date()
+      });
+    }
 
     await session.save();
     res.json({ message: 'Performance note saved' });
@@ -90,12 +78,8 @@ router.post('/session/:sessionId/performance/:playerId', auth, async (req, res) 
   }
 });
 
-//
 // 📥 GET SESSION PERFORMANCE NOTES
-//
-router.get('/session/:sessionId/performance', auth, async (req, res) => {
-  if (req.role !== 'coach') return res.status(403).json({ error: 'Access denied' });
-
+router.get('/session/:sessionId/performance', verifyRole('coach'), async (req, res) => {
   try {
     const session = await Session.findById(req.params.sessionId)
       .populate('performance.player', 'firstName lastName')
@@ -109,12 +93,8 @@ router.get('/session/:sessionId/performance', auth, async (req, res) => {
   }
 });
 
-//
 // 🔐 ADMIN-ONLY: GET ALL COACHES
-//
-router.get('/all', auth, async (req, res) => {
-  if (req.role !== 'admin') return res.status(403).json({ error: 'Access denied' });
-
+router.get('/all', verifyRole('admin'), async (req, res) => {
   try {
     const coaches = await Coach.find().select('-password');
     res.json(coaches);
@@ -123,12 +103,8 @@ router.get('/all', auth, async (req, res) => {
   }
 });
 
-//
 // 🔐 ADMIN-ONLY: REGISTER NEW COACH
-//
-router.post('/register', auth, async (req, res) => {
-  if (req.role !== 'admin') return res.status(403).json({ error: 'Access denied' });
-
+router.post('/register', verifyRole('admin'), async (req, res) => {
   try {
     const coach = new Coach(req.body);
     await coach.save();
@@ -138,12 +114,8 @@ router.post('/register', auth, async (req, res) => {
   }
 });
 
-//
 // 🔐 ADMIN-ONLY: GET COACH BY coachId
-//
-router.get('/by-id/:coachId', auth, async (req, res) => {
-  if (req.role !== 'admin') return res.status(403).json({ error: 'Access denied' });
-
+router.get('/by-id/:coachId', verifyRole('admin'), async (req, res) => {
   try {
     const coach = await Coach.findOne({ coachId: req.params.coachId });
     if (!coach) return res.status(404).json({ error: 'Coach not found' });
@@ -153,9 +125,8 @@ router.get('/by-id/:coachId', auth, async (req, res) => {
   }
 });
 
-router.get('/dashboard-ui', auth, async (req, res) => {
-  if (req.role !== 'coach') return res.status(403).json({ error: 'Access denied' });
-
+// 🧭 COACH DASHBOARD UI
+router.get('/dashboard-ui', verifyRole('coach'), async (req, res) => {
   const coach = await Coach.findById(req.userId);
   const sessions = await Session.find({ coach: req.userId }).sort({ date: -1 }).limit(5);
   const players = await Player.find();
@@ -191,9 +162,8 @@ router.get('/dashboard-ui', auth, async (req, res) => {
   });
 });
 
-router.get('/player/:playerId/profile-ui', auth, async (req, res) => {
-  if (req.role !== 'coach') return res.status(403).json({ error: 'Access denied' });
-
+// 🧭 PLAYER PROFILE UI
+router.get('/player/:playerId/profile-ui', verifyRole('coach'), async (req, res) => {
   try {
     const player = await Player.findById(req.params.playerId).populate('notes.coachId', 'firstName lastName');
     if (!player) return res.status(404).json({ error: 'Player not found' });
@@ -240,9 +210,8 @@ router.get('/player/:playerId/profile-ui', auth, async (req, res) => {
   }
 });
 
-router.get('/player/:playerId/progress-ui', auth, async (req, res) => {
-  if (req.role !== 'coach') return res.status(403).json({ error: 'Access denied' });
-
+// 🧭 PLAYER PROGRESS UI
+router.get('/player/:playerId/progress-ui', verifyRole('coach'), async (req, res) => {
   try {
     const sessions = await Session.find({ 'performance.player': req.params.playerId })
       .select('date performance')
@@ -265,29 +234,16 @@ router.get('/player/:playerId/progress-ui', auth, async (req, res) => {
   }
 });
 
-//
 // 🧭 COACH DASHBOARD (Simple UI)
-//
-router.get('/dashboard-lite', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ message: 'Missing token' });
-
-  const token = authHeader.split(' ')[1];
-  try {
-    const decoded = jwt.verify(token, SECRET);
-    if (decoded.role !== 'coach') return res.status(403).json({ message: 'Forbidden' });
-
-    res.json({
-      name: 'Coach Sharma',
-      assignedSessions: [
-        { date: '2025-10-10', focusArea: 'Batting', players: 12 },
-        { date: '2025-10-12', focusArea: 'Fitness', players: 8 }
-      ],
-      feedbackPending: 5
-    });
-  } catch (err) {
-    res.status(401).json({ message: 'Invalid token' });
-  }
+router.get('/dashboard-lite', verifyRole('coach'), async (req, res) => {
+  res.json({
+    name: 'Coach Sharma',
+    assignedSessions: [
+      { date: '2025-10-10', focusArea: 'Batting', players: 12 },
+      { date: '2025-10-12', focusArea: 'Fitness', players: 8 }
+    ],
+    feedbackPending: 5
+  });
 });
 
 module.exports = router;
