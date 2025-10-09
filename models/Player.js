@@ -3,8 +3,8 @@ const bcrypt = require('bcrypt');
 
 const playerSchema = new mongoose.Schema({
   playerId: {
-  type: String,
-  unique: true,
+    type: String,
+    unique: true,
   },
   username: { type: String, unique: true, required: true },
   password: { type: String, required: true },
@@ -36,17 +36,18 @@ const playerSchema = new mongoose.Schema({
     enum: ['Active', 'Inactive', 'Suspended', 'Graduated'],
     default: 'Active'
   },
-
- notes: [
-  {
-    coachId: { type: mongoose.Schema.Types.ObjectId, ref: 'Coach' },
-    content: String,
-    createdAt: { type: Date, default: Date.now }
-  }
-]
-
+  schedule: {
+    type: Object,
+    default: {}
+  },
+  notes: [
+    {
+      coachId: { type: mongoose.Schema.Types.ObjectId, ref: 'Coach' },
+      content: String,
+      createdAt: { type: Date, default: Date.now }
+    }
+  ]
 });
-
 
 playerSchema.pre('save', async function (next) {
   if (!this.playerId) {

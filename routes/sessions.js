@@ -3,9 +3,10 @@ const router = express.Router();
 const Session = require('../models/Session');
 const Coach = require('../models/Coach');
 const Player = require('../models/Player');
-const auth = require('../middleware/auth');
+const { verifyRole } = require('../middleware/auth');
 
-router.get('/', auth, async (req, res) => {
+// 📅 Get sessions (accessible to coaches)
+router.get('/', verifyRole('coach'), async (req, res) => {
   try {
     const { focusArea, startDate, endDate } = req.query;
     const filter = {};
@@ -29,7 +30,8 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-router.post('/', auth, async (req, res) => {
+// 🆕 Create session (admin only)
+router.post('/', verifyRole('admin'), async (req, res) => {
   try {
     const newSession = new Session(req.body);
     const savedSession = await newSession.save();
@@ -39,7 +41,8 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-router.get('/by-coach/:coachId', auth, async (req, res) => {
+// 📋 Get sessions by coach ID (coach only)
+router.get('/by-coach/:coachId', verifyRole('coach'), async (req, res) => {
   try {
     const coach = await Coach.findOne({ coachId: req.params.coachId });
     if (!coach) return res.status(404).json({ error: 'Coach not found' });
@@ -54,7 +57,8 @@ router.get('/by-coach/:coachId', auth, async (req, res) => {
   }
 });
 
-router.get('/by-player/:playerId', auth, async (req, res) => {
+// 📋 Get sessions by player ID (coach only)
+router.get('/by-player/:playerId', verifyRole('coach'), async (req, res) => {
   try {
     const player = await Player.findOne({ playerId: req.params.playerId });
     if (!player) return res.status(404).json({ error: 'Player not found' });

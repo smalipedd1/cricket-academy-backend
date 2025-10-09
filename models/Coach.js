@@ -4,44 +4,44 @@ const bcrypt = require('bcrypt');
 const coachSchema = new mongoose.Schema({
   coachId: {
     type: String,
-    unique: true,
+    unique: true
   },
-  username: {
-    type: String,
-    unique: true,
-    required: true
-  },
-  password: {
-    type: String,
-    required: true
-  },
+  username: { type: String, unique: true, required: true },
+  password: { type: String, required: true },
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
-  specialty: {
-    type: String,
-    enum: ['Batting', 'Bowling', 'Fielding', 'Fitness'],
-    required: true
-  },
-  experienceYears: { type: Number, required: true },
   emailAddress: {
     type: String,
     required: true,
     match: /.+\@.+\..+/
+  },
+  phoneNumber: {
+    type: String,
+    required: true
+  },
+  specialization: {
+    type: String,
+    enum: ['Batting', 'Bowling', 'Fitness', 'Fielding', 'Wicketkeeping'],
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ['Active', 'Inactive', 'Suspended'],
+    default: 'Active'
   }
 });
 
-// ✅ Auto-generate coachId
 coachSchema.pre('save', async function (next) {
   if (!this.coachId) {
     const count = await mongoose.model('Coach').countDocuments();
-    this.coachId = `COACH${100 + count + 1}`;
+    this.coachId = `COACH${1000 + count + 1}`;
   }
+  next();
+});
 
-  // ✅ Hash password if modified
-  if (this.isModified('password')) {
-    this.password = await bcrypt.hash(this.password, 10);
-  }
-
+coachSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
+  this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 

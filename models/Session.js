@@ -12,25 +12,30 @@ const sessionSchema = new mongoose.Schema({
     ref: 'Coach',
     required: true
   },
-  players: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Player'
-  }],
+  players: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Player'
+    }
+  ],
   notes: { type: String },
-
+  status: {
+    type: String,
+    enum: ['Active', 'Inactive'],
+    default: 'Active'
+  },
   performance: [
-  {
-    player: { type: mongoose.Schema.Types.ObjectId, ref: 'Player' },
-    rating: Number,
-    notes: String,
-    focusArea: {
-      type: String,
-      enum: ['Batting', 'Bowling', 'Fielding', 'Fitness', 'Strategy']
-    },
-    createdAt: { type: Date, default: Date.now }
-  }
-]
-
+    {
+      player: { type: mongoose.Schema.Types.ObjectId, ref: 'Player' },
+      rating: Number,
+      notes: String,
+      focusArea: {
+        type: String,
+        enum: ['Batting', 'Bowling', 'Fielding', 'Fitness', 'Strategy']
+      },
+      createdAt: { type: Date, default: Date.now }
+    }
+  ]
 });
 
 module.exports = mongoose.model('Session', sessionSchema);
