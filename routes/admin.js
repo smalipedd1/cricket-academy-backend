@@ -3,6 +3,8 @@ const router = express.Router();
 const Admin = require('../models/Admin');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const { verifyRole } = require('../middleware/auth');
+
 
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
@@ -26,5 +28,11 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+// ✅ Protected admin dashboard route
+router.get('/dashboard', verifyRole('admin'), (req, res) => {
+  res.json({ message: `Welcome Admin ${req.userId}` });
+});
+
 
 module.exports = router;
