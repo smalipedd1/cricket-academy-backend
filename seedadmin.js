@@ -18,7 +18,7 @@ const seedAdmin = async () => {
     }
 
     const admin = new Admin({
-      username: 'admin',
+      username: 'admin2',
       password: 'Password!23' // 🔐 Will be hashed automatically
     });
 
