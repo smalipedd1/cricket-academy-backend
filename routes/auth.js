@@ -3,7 +3,7 @@ const router = express.Router();
 const Admin = require('../models/Admin');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const auth = require('../middleware/auth');
+const { verifyRole } = require('../middleware/auth');
 const Session = require('../models/Session');
 const Player = require('../models/Player');
 const Coach = require('../models/Coach');
@@ -33,6 +33,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// ✅ Coach login route
 router.post('/coach/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -55,9 +56,8 @@ router.post('/coach/login', async (req, res) => {
   }
 });
 
-
 // ✅ Admin profile route
-router.get('/admin', auth, async (req, res) => {
+router.get('/admin', verifyRole('admin'), async (req, res) => {
   try {
     const admin = await Admin.findById(req.userId).select('-password');
     if (!admin) return res.status(404).json({ error: 'Admin not found' });
@@ -68,9 +68,7 @@ router.get('/admin', auth, async (req, res) => {
 });
 
 // ✅ Admin dashboard route
-router.get('/admin/dashboard', auth, async (req, res) => {
-  if (req.role !== 'admin') return res.status(403).json({ error: 'Access denied' });
-
+router.get('/admin/dashboard', verifyRole('admin'), async (req, res) => {
   try {
     const totalPlayers = await Player.countDocuments();
     const totalCoaches = await Coach.countDocuments();
@@ -92,9 +90,7 @@ router.get('/admin/dashboard', auth, async (req, res) => {
 });
 
 // ✅ Admin registration route
-router.post('/admin', auth, async (req, res) => {
-  if (req.role !== 'admin') return res.status(403).json({ error: 'Access denied' });
-
+router.post('/admin', verifyRole('admin'), async (req, res) => {
   try {
     const { username, password } = req.body;
     const existing = await Admin.findOne({ username });
