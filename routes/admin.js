@@ -135,4 +135,28 @@ router.put('/players/:id', verifyRole('admin'), async (req, res) => {
   }
 });
 
+// ✅ Create new coach
+router.post('/coaches', verifyRole('admin'), async (req, res) => {
+  try {
+    const newCoach = new Coach(req.body);
+    await newCoach.save();
+    res.status(201).json(newCoach);
+  } catch (err) {
+    console.error('Error creating coach:', err);
+    res.status(500).json({ error: 'Failed to create coach' });
+  }
+});
+
+// ✅ Create new player
+router.post('/players', verifyRole('admin'), async (req, res) => {
+  try {
+    const newPlayer = new Player(req.body);
+    await newPlayer.save();
+    res.status(201).json(newPlayer);
+  } catch (err) {
+    console.error('Error creating player:', err);
+    res.status(500).json({ error: 'Failed to create player' });
+  }
+});
+
 module.exports = router;
