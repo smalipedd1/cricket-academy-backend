@@ -119,4 +119,20 @@ router.get('/players', verifyRole('admin'), async (req, res) => {
   }
 });
 
+// ✅ Update player by ID
+router.put('/players/:id', verifyRole('admin'), async (req, res) => {
+  try {
+    const updatedPlayer = await Player.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    if (!updatedPlayer) return res.status(404).json({ error: 'Player not found' });
+    res.json(updatedPlayer);
+  } catch (err) {
+    console.error('Error updating player:', err);
+    res.status(500).json({ error: 'Failed to update player' });
+  }
+});
+
 module.exports = router;
