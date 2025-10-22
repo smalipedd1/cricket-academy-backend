@@ -108,4 +108,15 @@ router.put('/coaches/:id', verifyRole('admin'), async (req, res) => {
   }
 });
 
+// ✅ Get all players
+router.get('/players', verifyRole('admin'), async (req, res) => {
+  try {
+    const players = await Player.find();
+    res.json(players);
+  } catch (err) {
+    console.error('Error fetching players:', err);
+    res.status(500).json({ error: 'Failed to fetch players' });
+  }
+});
+
 module.exports = router;
