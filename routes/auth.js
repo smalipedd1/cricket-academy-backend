@@ -1,109 +1,68 @@
 const express = require('express');
 const router = express.Router();
-const Admin = require('../models/Admin');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const { verifyRole } = require('../middleware/auth');
-const Session = require('../models/Session');
-const Player = require('../models/Player');
 const Coach = require('../models/Coach');
+const Player = require('../models/Player');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+const { verifyRole } = require('../middleware/auth');
 
-const SECRET = process.env.JWT_SECRET || 'supersecretkey';
-
-// ✅ Admin login route
-router.post('/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-
-    const admin = await Admin.findOne({ username });
-    if (!admin) return res.status(401).json({ error: 'Invalid credentials' });
-
-    const isMatch = await bcrypt.compare(password, admin.password);
-    if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
-
-    const token = jwt.sign(
-      { id: admin._id, role: 'admin' },
-      SECRET,
-      { expiresIn: '1h' }
-    );
-
-    res.json({ token });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ✅ Coach login route
+// 🧑‍🏫 Coach login
 router.post('/coach/login', async (req, res) => {
   try {
     const { username, password } = req.body;
-
     const coach = await Coach.findOne({ username });
-    if (!coach) return res.status(401).json({ error: 'Invalid credentials' });
+    if (!coach) return res.status(404).json({ error: 'Coach not found' });
 
     const isMatch = await bcrypt.compare(password, coach.password);
     if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
 
     const token = jwt.sign(
-      { id: coach._id, role: 'coach' },
-      SECRET,
-      { expiresIn: '1h' }
+      { userId: coach._id, role: 'coach' },
+      process.env.JWT_SECRET,
+      { expiresIn: '1d' }
     );
 
-    res.json({ token });
+    res.json({ token, coach });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// ✅ Admin profile route
-router.get('/admin', verifyRole('admin'), async (req, res) => {
-  try {
-    const admin = await Admin.findById(req.userId).select('-password');
-    if (!admin) return res.status(404).json({ error: 'Admin not found' });
-    res.json(admin);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ✅ Admin dashboard route
-router.get('/admin/dashboard', verifyRole('admin'), async (req, res) => {
-  try {
-    const totalPlayers = await Player.countDocuments();
-    const totalCoaches = await Coach.countDocuments();
-    const totalSessions = await Session.countDocuments();
-
-    const sessionsByFocus = await Session.aggregate([
-      { $group: { _id: '$focusArea', count: { $sum: 1 } } }
-    ]);
-
-    res.json({
-      totalPlayers,
-      totalCoaches,
-      totalSessions,
-      sessionsByFocus
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ✅ Admin registration route
-router.post('/admin', verifyRole('admin'), async (req, res) => {
+// 🧑‍🎓 Player login
+router.post('/player/login', async (req, res) => {
   try {
     const { username, password } = req.body;
-    const existing = await Admin.findOne({ username });
-    if (existing) return res.status(400).json({ error: 'Username already exists' });
+    const player = await Player.findOne({ username });
+    if (!player) return res.status(404).json({ error: 'Player not found' });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newAdmin = new Admin({ username, password: hashedPassword });
+    const isMatch = await bcrypt.compare(password, player.password);
+    if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
 
-    await newAdmin.save();
-    res.status(201).json({ message: 'Admin created successfully' });
+    const token = jwt.sign(
+      { userId: player._id, role: 'player' },
+      process.env.JWT_SECRET,
+      { expiresIn: '1d' }
+    );
+
+    res.json({ token, player });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// 🛡️ Admin-only test route
+router.get('/admin/test', verifyRole('admin'), async (req, res) => {
+  res.json({ message: 'Admin route working' });
+});
+
+// 🧑‍🏫 Coach-only test route
+router.get('/coach/test', verifyRole('coach'), async (req, res) => {
+  res.json({ message: 'Coach route working' });
+});
+
+// 🧑‍🎓 Player-only test route
+router.get('/player/test', verifyRole('player'), async (req, res) => {
+  res.json({ message: 'Player route working' });
 });
 
 module.exports = router;
