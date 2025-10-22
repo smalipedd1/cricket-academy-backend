@@ -33,42 +33,8 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// ✅ Coach login route
-router.post('/coach/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-
-    const coach = await Coach.findOne({ username });
-    if (!coach) return res.status(401).json({ error: 'Invalid credentials' });
-
-    const isMatch = await bcrypt.compare(password, coach.password);
-    if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
-
-    const token = jwt.sign(
-      { id: coach._id, role: 'coach' },
-      SECRET,
-      { expiresIn: '1h' }
-    );
-
-    res.json({ token });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ✅ Admin profile route
-router.get('/admin', verifyRole('admin'), async (req, res) => {
-  try {
-    const admin = await Admin.findById(req.userId).select('-password');
-    if (!admin) return res.status(404).json({ error: 'Admin not found' });
-    res.json(admin);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 // ✅ Admin dashboard route
-router.get('/admin/dashboard', verifyRole('admin'), async (req, res) => {
+router.get('/dashboard', verifyRole('admin'), async (req, res) => {
   try {
     const totalPlayers = await Player.countDocuments();
     const totalCoaches = await Coach.countDocuments();
@@ -89,8 +55,19 @@ router.get('/admin/dashboard', verifyRole('admin'), async (req, res) => {
   }
 });
 
+// ✅ Admin profile route
+router.get('/', verifyRole('admin'), async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.userId).select('-password');
+    if (!admin) return res.status(404).json({ error: 'Admin not found' });
+    res.json(admin);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ✅ Admin registration route
-router.post('/admin', verifyRole('admin'), async (req, res) => {
+router.post('/', verifyRole('admin'), async (req, res) => {
   try {
     const { username, password } = req.body;
     const existing = await Admin.findOne({ username });
