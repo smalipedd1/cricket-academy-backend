@@ -106,4 +106,29 @@ router.post('/admin', verifyRole('admin'), async (req, res) => {
   }
 });
 
+// ✅ Get all coaches
+router.get('/coaches', verifyRole('admin'), async (req, res) => {
+  try {
+    const coaches = await Coach.find();
+    res.json(coaches);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ✅ Update coach by ID
+router.put('/coaches/:id', verifyRole('admin'), async (req, res) => {
+  try {
+    const updatedCoach = await Coach.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    if (!updatedCoach) return res.status(404).json({ error: 'Coach not found' });
+    res.json(updatedCoach);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
