@@ -1,12 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
+const { verifyRole } = require('../middleware/auth');
 const Coach = require('../models/Coach');
 const Player = require('../models/Player');
 const Session = require('../models/Session');
-module.exports = router;
 
-router.get('/', auth, async (req, res) => {
+router.get('/', verifyRole('admin'), async (req, res) => {
   const role = req.query.role;
   const userId = req.userId;
 
@@ -73,3 +72,5 @@ router.get('/', auth, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+module.exports = router;
