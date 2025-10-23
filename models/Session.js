@@ -4,7 +4,7 @@ const sessionSchema = new mongoose.Schema({
   date: { type: Date, required: true },
   focusArea: {
     type: String,
-    enum: ['Batting', 'Bowling', 'Fielding', 'Fitness'],
+    enum: ['Batting', 'Bowling', 'Fielding', 'Fitness','Combined'],
     required: true
   },
   coach: {
@@ -31,7 +31,7 @@ const sessionSchema = new mongoose.Schema({
       notes: String,
       focusArea: {
         type: String,
-        enum: ['Batting', 'Bowling', 'Fielding', 'Fitness', 'Strategy']
+        enum: ['Batting', 'Bowling', 'Fielding', 'Fitness', 'Strategy','Combined']
       },
       createdAt: { type: Date, default: Date.now }
     }
