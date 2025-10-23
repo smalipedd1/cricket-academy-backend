@@ -159,4 +159,57 @@ router.post('/players', verifyRole('admin'), async (req, res) => {
   }
 });
 
+//✅ Create Sessions
+router.post('/sessions', verifyRole('admin'), async (req, res) => {
+  const {
+    date,
+    focusArea,
+    coach,
+    players,
+    notes,
+    status,
+    isRecurring,
+    recurrencePattern
+  } = req.body;
+
+  try {
+    if (!isRecurring) {
+      const session = new Session({ date, focusArea, coach, players, notes, status });
+      await session.save();
+      return res.status(201).json(session);
+    }
+
+    // Recurring session generation
+    const { dayOfWeek, time, durationMinutes, recurrenceGroupId } = recurrencePattern;
+    const sessions = [];
+    const startDate = new Date(date);
+
+    for (let i = 0; i < 12; i++) {
+      const nextDate = new Date(startDate);
+      nextDate.setDate(startDate.getDate() + i * 7);
+
+      const session = new Session({
+        date: nextDate,
+        focusArea,
+        coach,
+        players,
+        notes,
+        status,
+        isRecurring: true,
+        recurrencePattern,
+        recurrenceGroupId
+      });
+
+      await session.save();
+      sessions.push(session);
+    }
+
+    return res.status(201).json(sessions);
+  } catch (err) {
+    console.error('Error creating session:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 module.exports = router;
