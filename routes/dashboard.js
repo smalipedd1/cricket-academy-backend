@@ -5,7 +5,7 @@ const Coach = require('../models/Coach');
 const Player = require('../models/Player');
 const Session = require('../models/Session');
 
-router.get('/', verifyRole('admin'), async (req, res) => {
+router.get('/', verifyRole('admin','coach'), async (req, res) => {
   const role = req.query.role;
   const userId = req.userId;
 
