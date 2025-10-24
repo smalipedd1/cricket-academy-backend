@@ -8,7 +8,11 @@ const Player = require('../models/Player');
 // 🧭 COACH DASHBOARD UI
 router.get('/dashboard-ui', verifyRole('coach'), async (req, res) => {
   const coach = await Coach.findById(req.userId);
-  const sessions = await Session.find({ coach: req.userId }).sort({ date: -1 }).limit(5);
+  const sessions = await Session.find({ coach: req.userId })
+  .populate('players') 
+  .sort({ date: -1 })
+  .limit(5);
+
   const players = await Player.find();
 
   const recentSessions = sessions.map(s => ({
