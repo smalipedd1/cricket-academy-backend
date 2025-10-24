@@ -211,5 +211,28 @@ router.post('/sessions', verifyRole('admin'), async (req, res) => {
   }
 });
 
+router.get('/sessions', verifyRole('admin'), async (req, res) => {
+  const { coachId, startDate, endDate, academyLevel } = req.query;
+  const query = {};
+
+  if (coachId) query.coach = coachId;
+  if (academyLevel) query.academyLevel = academyLevel;
+  if (startDate && endDate) {
+    query.date = {
+      $gte: new Date(startDate),
+      $lte: new Date(endDate)
+    };
+  }
+
+  try {
+    const sessions = await Session.find(query)
+      .populate('coach')
+      .populate('players');
+    res.json(sessions);
+  } catch (err) {
+    console.error('Error fetching sessions:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 module.exports = router;

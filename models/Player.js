@@ -40,6 +40,16 @@ const playerSchema = new mongoose.Schema({
     type: Object,
     default: {}
   },
+
+  performance: [
+    {
+      session: { type: mongoose.Schema.Types.ObjectId, ref: 'Session' },
+      rating: { type: Number, min: 1, max: 10 },
+      notes: { type: String },
+      createdAt: { type: Date, default: Date.now }
+    }
+  ],
+
   notes: [
     {
       coachId: { type: mongoose.Schema.Types.ObjectId, ref: 'Coach' },

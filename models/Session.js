@@ -2,41 +2,65 @@ const mongoose = require('mongoose');
 
 const sessionSchema = new mongoose.Schema({
   date: { type: Date, required: true },
+
   focusArea: {
     type: String,
-    enum: ['Batting', 'Bowling', 'Fielding', 'Fitness', 'Combined'], // ✅ Added "Combined"
+    enum: ['Batting', 'Bowling', 'Fielding', 'Fitness', 'Combined'],
     required: true
   },
+
   coach: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Coach',
     required: true
   },
+
   players: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Player'
+      ref: 'Player',
+      required: true
     }
   ],
+
   notes: { type: String },
+
   status: {
     type: String,
     enum: ['Active', 'Inactive'],
     default: 'Active'
   },
+
   performance: [
     {
-      player: { type: mongoose.Schema.Types.ObjectId, ref: 'Player' },
-      rating: Number,
-      notes: String,
+      player: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Player',
+        required: true
+      },
+      rating: {
+        type: Number,
+        min: 1,
+        max: 10,
+        required: true
+      },
+      notes: { type: String },
       focusArea: {
         type: String,
-        enum: ['Batting', 'Bowling', 'Fielding', 'Fitness', 'Strategy', 'Combined'] // ✅ Added "Combined"
+        enum: ['Batting', 'Bowling', 'Fielding', 'Fitness', 'Strategy', 'Combined'],
+        required: true
       },
       createdAt: { type: Date, default: Date.now }
     }
   ],
+
+  feedbackSubmitted: {
+    type: Boolean,
+    default: false
+  },
+
   isRecurring: { type: Boolean, default: false },
+
   recurrencePattern: {
     dayOfWeek: {
       type: String,
@@ -46,6 +70,7 @@ const sessionSchema = new mongoose.Schema({
     durationMinutes: { type: Number },
     recurrenceGroupId: { type: String }
   },
+
   createdAt: { type: Date, default: Date.now }
 });
 
