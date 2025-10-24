@@ -98,7 +98,7 @@ router.get('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
 // 🧑‍🏫 SUBMIT FEEDBACK FOR A SESSION
 router.post('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
   try {
-    const { feedback } = req.body; // [{ playerId, rating, notes }]
+    const { feedback } = req.body; // [{ playerId, rating, notes, focusArea }]
     const sessionId = req.params.sessionId;
 
     for (const entry of feedback) {
@@ -109,7 +109,8 @@ router.post('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
             performance: {
               session: sessionId,
               rating: entry.rating,
-              notes: entry.notes
+              notes: entry.notes,
+              focusArea: entry.focusArea || 'Combined'
             }
           }
         }
@@ -122,7 +123,8 @@ router.post('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
         performance: feedback.map(f => ({
           player: f.playerId,
           rating: f.rating,
-          notes: f.notes
+          notes: f.notes,
+          focusArea: f.focusArea || 'Combined'
         }))
       }
     });
