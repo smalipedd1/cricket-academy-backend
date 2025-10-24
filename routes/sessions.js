@@ -73,7 +73,7 @@ router.get('/by-player/:playerId', verifyRole('coach','admin'), async (req, res)
   }
 });
 
-router.put('/api/sessions/:id', verifyRole('admin'), async (req, res) => {
+router.put('/:id', verifyRole('admin'), async (req, res) => {
   try {
     const updated = await Session.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!updated) return res.status(404).json({ message: 'Session not found' });
