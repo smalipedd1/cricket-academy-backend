@@ -246,4 +246,15 @@ router.get('/dashboard-lite', verifyRole('coach'), async (req, res) => {
   });
 });
 
+// Get all coaches (admin + coach access)
+router.get('/', verifyRole('admin', 'coach'), async (req, res) => {
+  try {
+    const coaches = await Coach.find().select('firstName lastName _id');
+    res.json(coaches);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch coaches' });
+  }
+});
+
+
 module.exports = router;
