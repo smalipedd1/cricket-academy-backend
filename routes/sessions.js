@@ -73,10 +73,15 @@ router.get('/by-player/:playerId', verifyRole('coach','admin'), async (req, res)
   }
 });
 
-router.put('/api/sessions/:id', authMiddleware, async (req, res) => {
-  const session = await Session.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  if (!session) return res.status(404).json({ message: 'Session not found' });
-  res.json(session);
+router.put('/api/sessions/:id', verifyRole('admin'), async (req, res) => {
+  try {
+    const updated = await Session.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!updated) return res.status(404).json({ message: 'Session not found' });
+    res.json(updated);
+  } catch (err) {
+    console.error('Update error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 module.exports = router;
