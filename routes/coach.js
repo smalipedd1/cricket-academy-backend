@@ -9,9 +9,9 @@ const Player = require('../models/Player');
 router.get('/dashboard-ui', verifyRole('coach'), async (req, res) => {
   const coach = await Coach.findById(req.userId);
   const sessions = await Session.find({ coach: req.userId })
-  .populate('players') 
-  .sort({ date: -1 })
-  .limit(5);
+    .populate('players')
+    .sort({ date: -1 })
+    .limit(5);
 
   const players = await Player.find();
 
@@ -78,7 +78,8 @@ router.get('/feedback/pending', verifyRole('coach'), async (req, res) => {
 router.get('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
   try {
     const session = await Session.findById(req.params.sessionId)
-      .populate('players', 'firstName lastName role status');
+      .populate('players', 'firstName lastName role status')
+      .populate('performance.player', 'firstName lastName');
 
     if (!session) return res.status(404).json({ error: 'Session not found' });
 
@@ -86,7 +87,8 @@ router.get('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
       sessionId: session._id,
       date: session.date,
       focusArea: session.focusArea,
-      players: session.players
+      players: session.players,
+      performance: session.performance
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -114,7 +116,16 @@ router.post('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
       );
     }
 
-    await Session.findByIdAndUpdate(sessionId, { feedbackSubmitted: true });
+    await Session.findByIdAndUpdate(sessionId, {
+      feedbackSubmitted: true,
+      $set: {
+        performance: feedback.map(f => ({
+          player: f.playerId,
+          rating: f.rating,
+          notes: f.notes
+        }))
+      }
+    });
 
     res.json({ message: 'Feedback submitted successfully' });
   } catch (err) {
