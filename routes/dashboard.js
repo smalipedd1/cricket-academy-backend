@@ -31,19 +31,24 @@ router.get('/', verifyRole('admin'), async (req, res) => {
     }
 
 	else if (role === 'admin') {
-	  const today = new Date();
-	  const twoWeeksLater = new Date();
-	  twoWeeksLater.setDate(today.getDate() + 14);
+  	const today = new Date();
+  	const twoWeeksLater = new Date();
+  	twoWeeksLater.setDate(today.getDate() + 14);
 
-	  const upcomingSessions = await Session.countDocuments({
- 	   date: { $gte: today, $lte: twoWeeksLater }
- 	 });
+  	const upcomingSessions = await Session.countDocuments({
+    	date: { $gte: today, $lte: twoWeeksLater }
+  	});
 
-	  res.json({
-	    role: 'admin',
-	    upcomingSessions
-	  });
-	}
+  	const totalPlayers = await Player.countDocuments();
+  	const totalCoaches = await Coach.countDocuments();
+
+  	res.json({
+   	role: 'admin',
+    	totalPlayers,
+    	totalCoaches,
+    	upcomingSessions
+  	});
+      }
 
     else if (role === 'player') {
       const player = await Player.findById(userId);
