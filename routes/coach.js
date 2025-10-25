@@ -74,7 +74,17 @@ router.get('/feedback/pending', verifyRole('coach'), async (req, res) => {
   }
 });
 
-// ✅ FIXED: Place this BEFORE /feedback/:sessionId
+// 🧑‍🏫 GET ALL PLAYERS (for dropdown)
+router.get('/players', verifyRole('coach'), async (req, res) => {
+  try {
+    const players = await Player.find().select('firstName lastName _id');
+    res.json(players);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 🧑‍🏫 GET FEEDBACK SUMMARY
 router.get('/feedback/summary', verifyRole('coach'), async (req, res) => {
   try {
     const sessions = await Session.find({ coach: req.userId })
@@ -247,7 +257,7 @@ router.put('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
       );
     }
 
-    await session.save();
+       await session.save();
     res.json({ message: 'Feedback updated successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
