@@ -1,22 +1,43 @@
 const jwt = require('jsonwebtoken');
-const SECRET = process.env.JWT_SECRET || 'supersecretkey';
+const Admin = require('../models/Admin');
+const Coach = require('../models/Coach');
+const Player = require('../models/Player');
 
-const verifyRole = (...allowedRoles) => (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'No token provided' });
+exports.verifyRole = (...allowedRoles) => {
+  return async (req, res, next) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Missing or malformed token' });
+      }
 
-  try {
-    const decoded = jwt.verify(token, SECRET);
-    if (!allowedRoles.includes(decoded.role)) {
-      return res.status(403).json({ error: 'Access denied: role mismatch' });
+      const token = authHeader.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      let user;
+      if (decoded.role === 'admin') {
+        user = await Admin.findById(decoded.id);
+      } else if (decoded.role === 'coach') {
+        user = await Coach.findById(decoded.id);
+      } else if (decoded.role === 'player') {
+        user = await Player.findById(decoded.id);
+      }
+
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      if (!allowedRoles.includes(decoded.role)) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+
+      req.user = user;
+      req.user.role = decoded.role; // ✅ Ensure role is attached
+
+      next();
+    } catch (err) {
+      console.error('Auth error:', err);
+      res.status(401).json({ error: 'Invalid or expired token' });
     }
-
-    req.userId = decoded.userId || decoded.id;
-    req.role = decoded.role;
-    next();
-  } catch (err) {
-    res.status(401).json({ error: 'Invalid token' });
-  }
+  };
 };
-
-module.exports = { verifyRole };
