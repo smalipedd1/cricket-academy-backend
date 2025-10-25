@@ -11,6 +11,10 @@ router.get('/', verifyRole('coach','admin'), async (req, res) => {
     const { focusArea, startDate, endDate } = req.query;
     const filter = {};
 
+	if (req.user.role === 'coach') {
+  	filter.coach = req.user._id;
+	}
+
     if (focusArea) filter.focusArea = focusArea;
     if (startDate && endDate) {
       filter.date = {
