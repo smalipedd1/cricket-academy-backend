@@ -74,6 +74,31 @@ router.get('/feedback/pending', verifyRole('coach'), async (req, res) => {
   }
 });
 
+// ✅ FIXED: Place this BEFORE /feedback/:sessionId
+router.get('/feedback/summary', verifyRole('coach'), async (req, res) => {
+  try {
+    const sessions = await Session.find({ coach: req.userId })
+      .populate('performance.player', 'firstName lastName')
+      .select('date performance');
+
+    const allFeedback = sessions.flatMap(session =>
+      session.performance.map(entry => ({
+        sessionDate: session.date,
+        playerId: entry.player._id,
+        playerName: `${entry.player.firstName} ${entry.player.lastName}`,
+        rating: entry.rating,
+        notes: entry.notes,
+        focusArea: entry.focusArea,
+        sessionId: session._id
+      }))
+    );
+
+    res.json(allFeedback);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 🧑‍🏫 GET SESSION DETAILS FOR FEEDBACK
 router.get('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
   try {
@@ -98,7 +123,7 @@ router.get('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
 // 🧑‍🏫 SUBMIT FEEDBACK FOR A SESSION
 router.post('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
   try {
-    const { feedback } = req.body; // [{ playerId, rating, notes, focusArea }]
+    const { feedback } = req.body;
     const sessionId = req.params.sessionId;
 
     for (const entry of feedback) {
@@ -135,30 +160,7 @@ router.post('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
   }
 });
 
-router.get('/feedback/summary', verifyRole('coach'), async (req, res) => {
-  try {
-    const sessions = await Session.find({ coach: req.userId })
-      .populate('performance.player', 'firstName lastName')
-      .select('date performance');
-
-    const allFeedback = sessions.flatMap(session =>
-      session.performance.map(entry => ({
-        sessionDate: session.date,
-        playerId: entry.player._id,
-        playerName: `${entry.player.firstName} ${entry.player.lastName}`,
-        rating: entry.rating,
-        notes: entry.notes,
-        focusArea: entry.focusArea,
-        sessionId: session._id
-      }))
-    );
-
-    res.json(allFeedback);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
+// 🧑‍🏫 GET PLAYER PERFORMANCE
 router.get('/player/:playerId/performance', verifyRole('coach'), async (req, res) => {
   try {
     const sessions = await Session.find({ coach: req.userId, 'performance.player': req.params.playerId })
@@ -185,9 +187,10 @@ router.get('/player/:playerId/performance', verifyRole('coach'), async (req, res
   }
 });
 
+// 🧑‍🏫 EDIT FEEDBACK FOR A SESSION
 router.put('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
   try {
-    const { feedback } = req.body; // [{ playerId, rating, notes, focusArea }]
+    const { feedback } = req.body;
     const session = await Session.findById(req.params.sessionId);
     if (!session) return res.status(404).json({ error: 'Session not found' });
 
@@ -224,7 +227,5 @@ router.put('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-
 
 module.exports = router;
