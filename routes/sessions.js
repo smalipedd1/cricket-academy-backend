@@ -8,6 +8,8 @@ const { verifyRole } = require('../middleware/auth');
 // 📅 Get sessions (accessible to coaches)
 router.get('/', verifyRole('coach','admin'), async (req, res) => {
   try {
+    console.log('🔍 Session fetch by:', req.user.role, req.user._id);
+
     const { focusArea, startDate, endDate } = req.query;
     const filter = {};
 
@@ -28,8 +30,10 @@ router.get('/', verifyRole('coach','admin'), async (req, res) => {
       .populate('players')
       .populate('performance.player');
 
+    console.log('✅ Sessions found:', sessions.length);
     res.json(sessions);
   } catch (err) {
+    console.error('❌ Session fetch error:', err);
     res.status(500).json({ error: err.message });
   }
 });
