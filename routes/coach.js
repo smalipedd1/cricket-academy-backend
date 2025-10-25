@@ -135,4 +135,96 @@ router.post('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
   }
 });
 
+router.get('/feedback/summary', verifyRole('coach'), async (req, res) => {
+  try {
+    const sessions = await Session.find({ coach: req.userId })
+      .populate('performance.player', 'firstName lastName')
+      .select('date performance');
+
+    const allFeedback = sessions.flatMap(session =>
+      session.performance.map(entry => ({
+        sessionDate: session.date,
+        playerId: entry.player._id,
+        playerName: `${entry.player.firstName} ${entry.player.lastName}`,
+        rating: entry.rating,
+        notes: entry.notes,
+        focusArea: entry.focusArea,
+        sessionId: session._id
+      }))
+    );
+
+    res.json(allFeedback);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/player/:playerId/performance', verifyRole('coach'), async (req, res) => {
+  try {
+    const sessions = await Session.find({ coach: req.userId, 'performance.player': req.params.playerId })
+      .select('date performance');
+
+    const entries = sessions.flatMap(s =>
+      s.performance
+        .filter(p => p.player.toString() === req.params.playerId)
+        .map(p => ({
+          date: s.date,
+          rating: p.rating,
+          notes: p.notes,
+          focusArea: p.focusArea
+        }))
+    );
+
+    const avgRating = entries.length
+      ? (entries.reduce((sum, e) => sum + e.rating, 0) / entries.length).toFixed(2)
+      : null;
+
+    res.json({ averageRating: avgRating, entries });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
+  try {
+    const { feedback } = req.body; // [{ playerId, rating, notes, focusArea }]
+    const session = await Session.findById(req.params.sessionId);
+    if (!session) return res.status(404).json({ error: 'Session not found' });
+
+    for (const entry of feedback) {
+      const index = session.performance.findIndex(p => p.player.toString() === entry.playerId);
+      if (index !== -1) {
+        session.performance[index].rating = entry.rating;
+        session.performance[index].notes = entry.notes;
+        session.performance[index].focusArea = entry.focusArea;
+      } else {
+        session.performance.push({
+          player: entry.playerId,
+          rating: entry.rating,
+          notes: entry.notes,
+          focusArea: entry.focusArea
+        });
+      }
+
+      await Player.updateOne(
+        { _id: entry.playerId, 'performance.session': req.params.sessionId },
+        {
+          $set: {
+            'performance.$.rating': entry.rating,
+            'performance.$.notes': entry.notes,
+            'performance.$.focusArea': entry.focusArea
+          }
+        }
+      );
+    }
+
+    await session.save();
+    res.json({ message: 'Feedback updated successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
 module.exports = router;
