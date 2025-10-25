@@ -31,28 +31,28 @@ const sessionSchema = new mongoose.Schema({
     default: 'Active'
   },
 
-  performance: [
-    {
-      player: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Player',
-        required: true
-      },
-      rating: {
-        type: Number,
-        min: 1,
-        max: 10,
-        required: true
-      },
-      notes: { type: String },
-      focusArea: {
-        type: String,
-        enum: ['Batting', 'Bowling', 'Fielding', 'Fitness', 'Strategy', 'Combined'],
-        required: true
-      },
-      createdAt: { type: Date, default: Date.now }
-    }
-  ],
+performance: [
+  {
+    session: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Session',
+      required: true
+    },
+    rating: {
+      batting: { type: Number, min: 1, max: 10, default: 0 },
+      bowling: { type: Number, min: 1, max: 10, default: 0 },
+      wicketkeeping: { type: Number, min: 1, max: 10, default: 0 },
+      fielding: { type: Number, min: 1, max: 10, default: 0 }
+    },
+    notes: { type: String },
+    focusArea: {
+      type: String,
+      enum: ['Batting', 'Bowling', 'Fielding', 'Fitness', 'Strategy', 'Combined'],
+      required: true
+    },
+    createdAt: { type: Date, default: Date.now }
+  }
+],
 
   feedbackSubmitted: {
     type: Boolean,

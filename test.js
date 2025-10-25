@@ -1,8 +1,11 @@
-const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
+const SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
-mongoose.connect('mongodb+srv://shasimalipeddi_db_user:utyiCvTGQLxPRQ5J@cricketcluster.xyevwx2.mongodb.net/cricketAcademy?retryWrites=true&w=majority&appName=CricketCluster', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log('Connected successfully'))
-.catch(err => console.error('Connection failed:', err));
+router.get('/test-token', (req, res) => {
+  const token = jwt.sign(
+    { userId: 'replace_with_valid_coach_id', role: 'coach' },
+    SECRET,
+    { expiresIn: '1h' }
+  );
+  res.json({ token });
+});

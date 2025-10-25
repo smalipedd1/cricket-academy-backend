@@ -41,14 +41,28 @@ const playerSchema = new mongoose.Schema({
     default: {}
   },
 
-  performance: [
-    {
-      session: { type: mongoose.Schema.Types.ObjectId, ref: 'Session' },
-      rating: { type: Number, min: 1, max: 10 },
-      notes: { type: String },
-      createdAt: { type: Date, default: Date.now }
-    }
-  ],
+performance: [
+  {
+    session: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Session',
+      required: true
+    },
+    rating: {
+      batting: { type: Number, min: 1, max: 10, default: 0 },
+      bowling: { type: Number, min: 1, max: 10, default: 0 },
+      wicketkeeping: { type: Number, min: 1, max: 10, default: 0 },
+      fielding: { type: Number, min: 1, max: 10, default: 0 }
+    },
+    notes: { type: String },
+    focusArea: {
+      type: String,
+      enum: ['Batting', 'Bowling', 'Fielding', 'Fitness', 'Strategy', 'Combined'],
+      required: true
+    },
+    createdAt: { type: Date, default: Date.now }
+  }
+],
 
   notes: [
     {
