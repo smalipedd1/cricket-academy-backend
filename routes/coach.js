@@ -99,6 +99,32 @@ router.get('/feedback/summary', verifyRole('coach'), async (req, res) => {
   }
 });
 
+// 🧑‍🏫 GET FEEDBACK FOR A SPECIFIC PLAYER
+router.get('/feedback/player/:playerId', verifyRole('coach'), async (req, res) => {
+  try {
+    const sessions = await Session.find({
+      coach: req.userId,
+      'performance.player': req.params.playerId
+    }).select('date performance');
+
+    const feedback = sessions.flatMap(session =>
+      session.performance
+        .filter(p => p.player.toString() === req.params.playerId)
+        .map(p => ({
+          sessionDate: session.date,
+          rating: p.rating,
+          notes: p.notes,
+          focusArea: p.focusArea,
+          sessionId: session._id
+        }))
+    );
+
+    res.json(feedback);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 🧑‍🏫 GET SESSION DETAILS FOR FEEDBACK
 router.get('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
   try {
