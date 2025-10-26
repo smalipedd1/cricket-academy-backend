@@ -122,6 +122,26 @@ router.put('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
   }
 });
 
+// ✅ GET a specific session for feedback logging
+router.get('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
+  try {
+    const session = await Session.findOne({
+      _id: req.params.sessionId,
+      coach: req.user._id // ✅ ensures coach can only access their own sessions
+    })
+      .populate('players')
+      .populate('performance.player');
+
+    if (!session) return res.status(404).json({ error: 'Session not found' });
+
+    res.json(session);
+  } catch (err) {
+    console.error('Session fetch error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 // GET feedback summary for coach
 router.get('/feedback/summary', verifyRole('coach'), async (req, res) => {
   try {
