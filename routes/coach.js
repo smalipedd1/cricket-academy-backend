@@ -29,6 +29,11 @@ router.get('/player/:id', verifyRole('coach'), async (req, res) => {
 router.patch('/player/:id', verifyRole('coach'), async (req, res) => {
   try {
     const updates = req.body;
+    // ✅ Hash password if it's being updated
+    if (updates.password) {
+      const bcrypt = require('bcrypt');
+      updates.password = await bcrypt.hash(updates.password, 10);
+    }
     const player = await Player.findByIdAndUpdate(req.params.id, updates, { new: true });
     if (!player) return res.status(404).json({ error: 'Player not found' });
     res.json({ message: 'Player updated successfully', player });
