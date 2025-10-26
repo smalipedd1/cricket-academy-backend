@@ -14,33 +14,28 @@ router.get('/players', verifyRole('coach'), async (req, res) => {
   }
 });
 
-// GET dashboard UI data
+// ✅ GET dashboard UI data (patched)
 router.get('/dashboard-ui', verifyRole('coach'), async (req, res) => {
   try {
-    const sessions = await Session.find({ coach: req.userId }).select('performance date');
-    const players = await Player.find().select('firstName lastName _id');
+    const coachId = req.user._id;
 
-    const playerSessionCount = {};
-    sessions.forEach(s => {
-      if (Array.isArray(s.performance)) {
-        s.performance.forEach(p => {
-          const id = p.player?.toString();
-          if (id) {
-            playerSessionCount[id] = (playerSessionCount[id] || 0) + 1;
-          }
-        });
-      }
+    const sessions = await Session.find({ coach: coachId })
+      .populate('players')
+      .populate('performance.player');
+
+    const recentSessions = sessions.map((s) => ({
+      _id: s._id,
+      date: s.date,
+      focusArea: s.focusArea,
+      playerCount: s.players.length,
+    }));
+
+    res.json({
+      coachName: req.user.name || req.user.username,
+      recentSessions,
     });
-
-    const dashboardData = Object.entries(playerSessionCount).map(([id, count]) => {
-      const player = players.find(p => p._id.toString() === id);
-      return player
-        ? { name: `${player.firstName} ${player.lastName}`, sessions: count }
-        : { name: 'Unknown Player', sessions: count };
-    });
-
-    res.json(dashboardData);
   } catch (err) {
+    console.error('Coach dashboard error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -130,7 +125,7 @@ router.put('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
 // GET feedback summary for coach
 router.get('/feedback/summary', verifyRole('coach'), async (req, res) => {
   try {
-    const sessions = await Session.find({ coach: req.userId })
+    const sessions = await Session.find({ coach: req.user._id })
       .populate('performance.player', 'firstName lastName')
       .select('date performance');
 
@@ -156,7 +151,7 @@ router.get('/feedback/summary', verifyRole('coach'), async (req, res) => {
 router.get('/feedback/player/:playerId', verifyRole('coach'), async (req, res) => {
   try {
     const sessions = await Session.find({
-      coach: req.userId,
+      coach: req.user._id,
       'performance.player': req.params.playerId
     }).select('date performance');
 
@@ -182,7 +177,7 @@ router.get('/feedback/player/:playerId', verifyRole('coach'), async (req, res) =
 router.get('/player/:playerId/performance', verifyRole('coach'), async (req, res) => {
   try {
     const sessions = await Session.find({
-      coach: req.userId,
+      coach: req.user._id,
       'performance.player': req.params.playerId
     }).select('date performance');
 
