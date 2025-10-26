@@ -20,15 +20,23 @@ router.get('/dashboard-ui', verifyRole('coach'), async (req, res) => {
     const coachId = req.user._id;
 
     const sessions = await Session.find({ coach: coachId })
+      .sort({ date: -1 })
       .populate('players')
       .populate('performance.player');
 
-    const recentSessions = sessions.map((s) => ({
-      _id: s._id,
-      date: s.date,
-      focusArea: s.focusArea,
-      playerCount: s.players.length,
-    }));
+    const recentSessions = sessions.map((s) => {
+  const totalPlayers = s.players.length;
+  const feedbackGiven = Array.isArray(s.performance) ? s.performance.length : 0;
+  const isComplete = feedbackGiven === totalPlayers;
+
+  return {
+    _id: s._id,
+    date: s.date,
+    focusArea: s.focusArea,
+    playerCount: totalPlayers,
+    feedbackStatus: isComplete ? 'Complete' : 'Pending'
+  };
+});
 
     res.json({
       coachName: req.user.name || req.user.username,
