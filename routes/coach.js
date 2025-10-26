@@ -298,6 +298,15 @@ router.get('/player/:playerId/performance', verifyRole('coach'), async (req, res
   }
 });
 
-
+// ✅ GET active players for dropdown filter
+router.get('/players', verifyRole('coach'), async (req, res) => {
+  try {
+    const statusFilter = req.query.status || 'Active';
+    const players = await Player.find({ status: statusFilter }).select('firstName lastName _id');
+    res.json(players);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 module.exports = router;
