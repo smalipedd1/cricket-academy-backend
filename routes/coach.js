@@ -43,10 +43,21 @@ router.get('/dashboard-ui', verifyRole('coach'), async (req, res) => {
 // POST feedback for a session
 router.post('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
   try {
-    const { feedback } = req.body;
     const sessionId = req.params.sessionId;
+    const { feedback } = req.body;
+
+    if (!Array.isArray(feedback) || feedback.length === 0) {
+      return res.status(400).json({ error: 'Feedback array is missing or empty' });
+    }
+
+    const session = await Session.findOne({ _id: sessionId, coach: req.user._id });
+    if (!session) return res.status(404).json({ error: 'Session not found or unauthorized' });
 
     for (const entry of feedback) {
+      if (!entry.playerId || !entry.rating) {
+        return res.status(400).json({ error: 'Missing playerId or rating in feedback entry' });
+      }
+
       await Player.updateOne(
         { _id: entry.playerId },
         {
@@ -62,23 +73,23 @@ router.post('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
       );
     }
 
-    await Session.findByIdAndUpdate(sessionId, {
-      feedbackSubmitted: true,
-      $set: {
-        performance: feedback.map(f => ({
-          player: f.playerId,
-          rating: f.rating,
-          notes: f.notes,
-          focusArea: f.focusArea || 'Combined'
-        }))
-      }
-    });
+    session.feedbackSubmitted = true;
+    session.performance = feedback.map(f => ({
+      player: f.playerId,
+      rating: f.rating,
+      notes: f.notes,
+      focusArea: f.focusArea || 'Combined'
+    }));
+
+    await session.save();
 
     res.json({ message: 'Feedback submitted successfully' });
   } catch (err) {
+    console.error('Feedback submission error:', err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // PUT feedback update
 router.put('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
