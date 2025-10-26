@@ -46,15 +46,25 @@ router.post('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
     const sessionId = req.params.sessionId;
     const { feedback } = req.body;
 
+    // ✅ Add these logs
+    console.log('📥 Incoming feedback payload:', feedback);
+    console.log('🆔 Session ID:', sessionId);
+    console.log('👤 Coach ID:', req.user._id);
+
     if (!Array.isArray(feedback) || feedback.length === 0) {
+      console.warn('⚠️ Feedback array is missing or empty');
       return res.status(400).json({ error: 'Feedback array is missing or empty' });
     }
 
     const session = await Session.findOne({ _id: sessionId, coach: req.user._id });
-    if (!session) return res.status(404).json({ error: 'Session not found or unauthorized' });
+    if (!session) {
+      console.warn('❌ Session not found or unauthorized');
+      return res.status(404).json({ error: 'Session not found or unauthorized' });
+    }
 
     for (const entry of feedback) {
       if (!entry.playerId || !entry.rating) {
+        console.warn('⚠️ Missing playerId or rating in entry:', entry);
         return res.status(400).json({ error: 'Missing playerId or rating in feedback entry' });
       }
 
@@ -83,13 +93,13 @@ router.post('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
 
     await session.save();
 
+    console.log('✅ Feedback saved successfully for session:', sessionId);
     res.json({ message: 'Feedback submitted successfully' });
   } catch (err) {
-    console.error('Feedback submission error:', err);
+    console.error('🔥 Feedback submission error:', err);
     res.status(500).json({ error: err.message });
   }
 });
-
 
 // PUT feedback update
 router.put('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
