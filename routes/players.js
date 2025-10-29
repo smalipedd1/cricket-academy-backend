@@ -49,9 +49,9 @@ router.get('/sessions/upcoming', verifyRole('player'), async (req, res) => {
 
 // ✅ GET feedback summary
 router.get('/feedback', verifyRole('player'), async (req, res) => {
-console.log('✅ /api/player/profile route hit');
-  
-try {
+  console.log('✅ /api/player/profile route hit');
+
+  try {
     const sessions = await Session.find({
       'performance.player': req.user._id
     }).select('date performance');
@@ -64,6 +64,7 @@ try {
           rating: p.rating,
           notes: p.notes,
           focusArea: p.focusArea,
+          playerResponse: p.playerResponse || '', // ✅ include response
           sessionId: session._id
         }))
     );
@@ -93,6 +94,26 @@ router.get('/performance-chart', verifyRole('player'), async (req, res) => {
     );
 
     res.json({ entries });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ✅ PATCH player response to coach feedback
+router.patch('/feedback-response/:sessionId', verifyRole('player'), async (req, res) => {
+  try {
+    const { playerId, responseText } = req.body;
+
+    const session = await Session.findById(req.params.sessionId);
+    if (!session) return res.status(404).json({ error: 'Session not found' });
+
+    const entry = session.performance.find(p => p.player.toString() === playerId);
+    if (!entry) return res.status(404).json({ error: 'Feedback entry not found for player' });
+
+    entry.playerResponse = responseText;
+    await session.save();
+
+    res.json({ message: 'Response saved', session });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

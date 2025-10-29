@@ -6,21 +6,21 @@ const sessionSchema = new mongoose.Schema({
   focusArea: {
     type: String,
     enum: ['Batting', 'Bowling', 'Fielding', 'Fitness', 'Combined'],
-    required: true
+    required: true,
   },
 
   coach: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Coach',
-    required: true
+    required: true,
   },
 
   players: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Player',
-      required: true
-    }
+      required: true,
+    },
   ],
 
   notes: { type: String },
@@ -28,30 +28,31 @@ const sessionSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['Active', 'Inactive'],
-    default: 'Active'
+    default: 'Active',
   },
 
-performance: [
-  {
-    player: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Player', // ✅ This enables .populate('performance.player')
-      required: true
+  performance: [
+    {
+      player: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Player', // ✅ Enables .populate('performance.player')
+        required: true,
+      },
+      rating: {
+        batting: Number,
+        bowling: Number,
+        wicketkeeping: Number,
+        fielding: Number,
+      },
+      notes: String,
+      focusArea: String,
+      playerResponse: { type: String, default: '' }, // ✅ NEW FIELD
     },
-    rating: {
-      batting: Number,
-      bowling: Number,
-      wicketkeeping: Number,
-      fielding: Number
-    },
-    notes: String,
-    focusArea: String
-  }
-],
+  ],
 
   feedbackSubmitted: {
     type: Boolean,
-    default: false
+    default: false,
   },
 
   isRecurring: { type: Boolean, default: false },
@@ -59,14 +60,14 @@ performance: [
   recurrencePattern: {
     dayOfWeek: {
       type: String,
-      enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+      enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
     },
     time: { type: String }, // e.g. '17:00'
     durationMinutes: { type: Number },
-    recurrenceGroupId: { type: String }
+    recurrenceGroupId: { type: String },
   },
 
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
 });
 
 module.exports = mongoose.model('Session', sessionSchema);
