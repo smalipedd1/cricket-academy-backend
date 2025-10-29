@@ -22,7 +22,7 @@ mongoose.connect(process.env.MONGO_URI)
 const PORT = process.env.PORT || 5000;
 
 const playerRoutes = require('./routes/players');
-app.use('/api/players', playerRoutes);
+app.use('/api/player', playerRoutes);
 
 app.use('/api/coach', require('./routes/coach'));
 
