@@ -49,7 +49,9 @@ router.get('/sessions/upcoming', verifyRole('player'), async (req, res) => {
 
 // ✅ GET feedback summary
 router.get('/feedback', verifyRole('player'), async (req, res) => {
-  try {
+console.log('✅ /api/player/profile route hit');
+  
+try {
     const sessions = await Session.find({
       'performance.player': req.user._id
     }).select('date performance');
