@@ -6,14 +6,21 @@ const { verifyRole } = require('../middleware/auth');
 // ✅ GET all notifications for logged-in user
 router.get('/', verifyRole('player', 'coach'), async (req, res) => {
   try {
+    console.log('🔍 req.user:', req.user);
+
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
     const notifications = await Notification.find({ recipient: req.user._id })
       .sort({ createdAt: -1 })
-      .populate('sender', 'firstName lastName username')
-      .populate('session', 'date focusArea');
+      .populate({ path: 'sender', select: 'firstName lastName username' })
+      .populate({ path: 'session', select: 'date focusArea' });
 
+    console.log('✅ notifications:', notifications);
     res.json(notifications);
   } catch (err) {
-    console.error('Error fetching notifications:', err);
+    console.error('❌ Error fetching notifications:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -33,7 +40,7 @@ router.patch('/:id/read', verifyRole('player', 'coach'), async (req, res) => {
 
     res.json({ message: 'Notification marked as read', notification });
   } catch (err) {
-    console.error('Error marking notification as read:', err);
+    console.error('❌ Error marking notification as read:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -52,7 +59,7 @@ router.delete('/:id', verifyRole('player', 'coach'), async (req, res) => {
 
     res.json({ message: 'Notification deleted' });
   } catch (err) {
-    console.error('Error deleting notification:', err);
+    console.error('❌ Error deleting notification:', err);
     res.status(500).json({ error: err.message });
   }
 });
