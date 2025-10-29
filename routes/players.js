@@ -1,51 +1,96 @@
 const express = require('express');
 const router = express.Router();
+const { verifyRole } = require('../middleware/auth');
 const Player = require('../models/Player');
+const Session = require('../models/Session');
 
-// GET all players
-router.get('/', async (req, res) => {
+// ✅ GET player profile
+router.get('/profile', verifyRole('player'), async (req, res) => {
   try {
-    const players = await Player.find();
-    res.json(players);
+    const player = await Player.findById(req.user._id);
+    if (!player) return res.status(404).json({ error: 'Player not found' });
+    res.json(player);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// POST a new player
-router.post('/', async (req, res) => {
+// ✅ PATCH update contact info
+router.patch('/profile', verifyRole('player'), async (req, res) => {
   try {
-    const newPlayer = new Player(req.body);
-    const savedPlayer = await newPlayer.save();
-    res.status(201).json(savedPlayer);
+    const updates = {};
+    ['email', 'phone', 'address'].forEach((field) => {
+      if (req.body[field]) updates[field] = req.body[field];
+    });
+
+    const player = await Player.findByIdAndUpdate(req.user._id, updates, { new: true });
+    res.json({ message: 'Profile updated', player });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// PATCH player status by ID
-router.patch('/:id/status', async (req, res) => {
+// ✅ GET upcoming sessions
+router.get('/sessions/upcoming', verifyRole('player'), async (req, res) => {
   try {
-    const { status } = req.body;
-    const updatedPlayer = await Player.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true, runValidators: true }
+    const today = new Date();
+    const sessions = await Session.find({
+      players: req.user._id,
+      date: { $gte: today }
+    })
+      .sort({ date: 1 })
+      .populate('coach', 'name');
+
+    res.json(sessions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ✅ GET feedback summary
+router.get('/feedback', verifyRole('player'), async (req, res) => {
+  try {
+    const sessions = await Session.find({
+      'performance.player': req.user._id
+    }).select('date performance');
+
+    const feedback = sessions.flatMap(session =>
+      session.performance
+        .filter(p => p.player.toString() === req.user._id.toString())
+        .map(p => ({
+          sessionDate: session.date,
+          rating: p.rating,
+          notes: p.notes,
+          focusArea: p.focusArea,
+          sessionId: session._id
+        }))
     );
-    if (!updatedPlayer) {
-      return res.status(404).json({ error: 'Player not found' });
-    }
-    res.json(updatedPlayer);
+
+    res.json(feedback);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
-router.get('/by-id/:playerId', async (req, res) => {
+// ✅ GET progress chart data
+router.get('/performance-chart', verifyRole('player'), async (req, res) => {
   try {
-    const player = await Player.findOne({ playerId: req.params.playerId });
-    if (!player) return res.status(404).json({ error: 'Player not found' });
-    res.json(player);
+    const sessions = await Session.find({
+      'performance.player': req.user._id
+    }).select('date performance');
+
+    const entries = sessions.flatMap(s =>
+      s.performance
+        .filter(p => p.player.toString() === req.user._id.toString())
+        .map(p => ({
+          date: s.date,
+          rating: p.rating,
+          notes: p.notes,
+          focusArea: p.focusArea
+        }))
+    );
+
+    res.json({ entries });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
