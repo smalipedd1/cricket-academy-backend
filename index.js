@@ -45,6 +45,3 @@ const coachRoutes = require('./routes/coach');
 app.use('/api/coaches', coachRoutes);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
-const playerRoutes = require('./routes/player');
-app.use('/api/player', playerRoutes);
