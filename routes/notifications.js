@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const Notification = require('../models/Notification');
-const { verifyToken } = require('../middleware/auth');
+const Notification = require('./models/Notification');
+const { verifyToken } = require('./middleware/auth');
 
 // ✅ GET all notifications for logged-in user
 router.get('/', verifyToken, async (req, res) => {
