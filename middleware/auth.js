@@ -16,11 +16,11 @@ exports.verifyRole = (...allowedRoles) => {
 
       let user;
       if (decoded.role === 'admin') {
-        user = await Admin.findById(decoded.id);
+        user = await Admin.findById(decoded._id); // ✅ fixed
       } else if (decoded.role === 'coach') {
-        user = await Coach.findById(decoded.id);
+        user = await Coach.findById(decoded._id); // ✅ fixed
       } else if (decoded.role === 'player') {
-        user = await Player.findById(decoded.id);
+        user = await Player.findById(decoded._id); // ✅ fixed
       }
 
       if (!user) {
@@ -32,7 +32,7 @@ exports.verifyRole = (...allowedRoles) => {
       }
 
       req.user = user;
-      req.user.role = decoded.role; // ✅ Ensure role is attached
+      req.user.role = decoded.role;
 
       next();
     } catch (err) {
