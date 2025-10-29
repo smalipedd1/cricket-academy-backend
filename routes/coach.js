@@ -29,7 +29,6 @@ router.get('/player/:id', verifyRole('coach'), async (req, res) => {
 router.patch('/player/:id', verifyRole('coach'), async (req, res) => {
   try {
     const updates = req.body;
-    // ✅ Hash password if it's being updated
     if (updates.password) {
       const bcrypt = require('bcrypt');
       updates.password = await bcrypt.hash(updates.password, 10);
@@ -81,24 +80,15 @@ router.post('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
     const sessionId = req.params.sessionId;
     const { feedback } = req.body;
 
-    console.log('📥 Incoming feedback payload:', feedback);
-    console.log('🆔 Session ID:', sessionId);
-    console.log('👤 Coach ID:', req.user._id);
-
     if (!Array.isArray(feedback) || feedback.length === 0) {
-      console.warn('⚠️ Feedback array is missing or empty');
       return res.status(400).json({ error: 'Feedback array is missing or empty' });
     }
 
     const session = await Session.findOne({ _id: sessionId, coach: req.user._id });
-    if (!session) {
-      console.warn('❌ Session not found or unauthorized');
-      return res.status(404).json({ error: 'Session not found or unauthorized' });
-    }
+    if (!session) return res.status(404).json({ error: 'Session not found or unauthorized' });
 
     for (const entry of feedback) {
       if (!entry.playerId || !entry.rating) {
-        console.warn('⚠️ Missing playerId or rating in entry:', entry);
         return res.status(400).json({ error: 'Missing playerId or rating in feedback entry' });
       }
 
@@ -126,11 +116,8 @@ router.post('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
     }));
 
     await session.save();
-
-    console.log('✅ Feedback saved successfully for session:', sessionId);
     res.json({ message: 'Feedback submitted successfully' });
   } catch (err) {
-    console.error('🔥 Feedback submission error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -192,6 +179,7 @@ router.get('/feedback/summary', verifyRole('coach'), async (req, res) => {
         rating: entry.rating,
         notes: entry.notes,
         focusArea: entry.focusArea,
+        playerResponse: entry.playerResponse || '', // ✅ include response
         sessionId: session._id
       }))
     );
@@ -202,8 +190,7 @@ router.get('/feedback/summary', verifyRole('coach'), async (req, res) => {
   }
 });
 
-
-// ✅ GET a specific session for feedback logging
+// ✅ GET a specific session for feedback logging (includes playerResponse)
 router.get('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
   try {
     const session = await Session.findOne({
@@ -211,17 +198,30 @@ router.get('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
       coach: req.user._id
     })
       .populate('players')
-      .populate('performance.player');
+      .populate('performance.player', 'firstName lastName username');
 
     if (!session) return res.status(404).json({ error: 'Session not found' });
 
-    res.json(session);
+    const feedbackEntries = session.performance.map((entry) => ({
+      player: entry.player,
+      rating: entry.rating,
+      notes: entry.notes,
+      focusArea: entry.focusArea || session.focusArea,
+      playerResponse: entry.playerResponse || '', // ✅ include response
+    }));
+
+    res.json({
+      sessionId: session._id,
+      date: session.date,
+      focusArea: session.focusArea,
+      coach: session.coach,
+      feedbackEntries,
+    });
   } catch (err) {
     console.error('Session fetch error:', err);
     res.status(500).json({ error: err.message });
   }
 });
-
 
 // ✅ GET feedback for a specific player
 router.get('/feedback/player/:playerId', verifyRole('coach'), async (req, res) => {
@@ -239,6 +239,7 @@ router.get('/feedback/player/:playerId', verifyRole('coach'), async (req, res) =
           rating: p.rating,
           notes: p.notes,
           focusArea: p.focusArea,
+          playerResponse: p.playerResponse || '', // ✅ include response
           sessionId: session._id
         }))
     );
@@ -275,7 +276,7 @@ router.get('/player/:playerId/performance', verifyRole('coach'), async (req, res
       fielding: 0
     };
 
-        entries.forEach(e => {
+    entries.forEach(e => {
       avg.batting += e.rating.batting || 0;
       avg.bowling += e.rating.bowling || 0;
       avg.wicketkeeping += e.rating.wicketkeeping || 0;
@@ -309,8 +310,7 @@ router.get('/players', verifyRole('coach'), async (req, res) => {
   }
 });
 
-
-// PATCH /api/coach/feedback/:sessionId
+// ✅ PATCH feedback overwrite (used for bulk updates)
 router.patch('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
   try {
     const { feedback } = req.body;
