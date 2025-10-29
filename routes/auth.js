@@ -17,7 +17,7 @@ router.post('/coach/login', async (req, res) => {
     if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
 
     const token = jwt.sign(
-      { id: coach._id, role: 'coach' }, // ✅ corrected payload
+      { _id: coach._id, role: 'coach' }, // ✅ changed from id → _id
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
@@ -39,7 +39,7 @@ router.post('/player/login', async (req, res) => {
     if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
 
     const token = jwt.sign(
-      { id: player._id, role: 'player' }, // ✅ corrected payload
+      { _id: player._id, role: 'player' }, // ✅ changed from id → _id
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
