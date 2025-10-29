@@ -309,4 +309,29 @@ router.get('/players', verifyRole('coach'), async (req, res) => {
   }
 });
 
+
+// PATCH /api/coach/feedback/:sessionId
+router.patch('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
+  try {
+    const { feedback } = req.body;
+
+    const updatedPerformance = feedback.map((entry) => ({
+      player: entry.playerId,
+      rating: entry.rating,
+      notes: entry.notes,
+      focusArea: entry.focusArea,
+    }));
+
+    const session = await Session.findByIdAndUpdate(
+      req.params.sessionId,
+      { performance: updatedPerformance },
+      { new: true }
+    );
+
+    res.json({ message: 'Feedback saved', session });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
