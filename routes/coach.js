@@ -3,6 +3,7 @@ const router = express.Router();
 const { verifyRole } = require('../middleware/auth');
 const Session = require('../models/Session');
 const Player = require('../models/Player');
+const Notification = require('../models/Notification'); // ✅ NEW
 
 // ✅ GET all players (full list for coach)
 router.get('/player-list', verifyRole('coach'), async (req, res) => {
@@ -122,43 +123,37 @@ router.post('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
   }
 });
 
-// ✅ PUT feedback update
-router.put('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
+// ✅ PATCH feedback overwrite + notify players
+router.patch('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
   try {
     const { feedback } = req.body;
-    const session = await Session.findById(req.params.sessionId);
-    if (!session) return res.status(404).json({ error: 'Session not found' });
 
+    const updatedPerformance = feedback.map((entry) => ({
+      player: entry.playerId,
+      rating: entry.rating,
+      notes: entry.notes,
+      focusArea: entry.focusArea,
+    }));
+
+    const session = await Session.findByIdAndUpdate(
+      req.params.sessionId,
+      { performance: updatedPerformance },
+      { new: true }
+    );
+
+    // ✅ Notify each player
     for (const entry of feedback) {
-      const index = session.performance.findIndex(p => p.player.toString() === entry.playerId);
-      if (index !== -1) {
-        session.performance[index].rating = entry.rating;
-        session.performance[index].notes = entry.notes;
-        session.performance[index].focusArea = entry.focusArea;
-      } else {
-        session.performance.push({
-          player: entry.playerId,
-          rating: entry.rating,
-          notes: entry.notes,
-          focusArea: entry.focusArea
-        });
-      }
-
-      await Player.updateOne(
-        { _id: entry.playerId, 'performance.session': req.params.sessionId },
-        {
-          $set: {
-            'performance.$.rating': entry.rating,
-            'performance.$.notes': entry.notes,
-            'performance.$.focusArea': entry.focusArea
-          }
-        },
-        { upsert: true }
-      );
+      await Notification.create({
+        recipient: entry.playerId,
+        sender: req.user._id,
+        type: 'feedback-submitted',
+        session: session._id,
+        player: entry.playerId,
+        message: `Coach ${req.user.firstName || req.user.username} submitted feedback for your session.`,
+      });
     }
 
-    await session.save();
-    res.json({ message: 'Feedback updated successfully' });
+    res.json({ message: 'Feedback saved', session });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -179,7 +174,7 @@ router.get('/feedback/summary', verifyRole('coach'), async (req, res) => {
         rating: entry.rating,
         notes: entry.notes,
         focusArea: entry.focusArea,
-        playerResponse: entry.playerResponse || '', // ✅ include response
+        playerResponse: entry.playerResponse || '',
         sessionId: session._id
       }))
     );
@@ -190,7 +185,7 @@ router.get('/feedback/summary', verifyRole('coach'), async (req, res) => {
   }
 });
 
-// ✅ GET a specific session for feedback logging (includes playerResponse)
+// ✅ GET a specific session for feedback logging
 router.get('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
   try {
     const session = await Session.findOne({
@@ -207,7 +202,7 @@ router.get('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
       rating: entry.rating,
       notes: entry.notes,
       focusArea: entry.focusArea || session.focusArea,
-      playerResponse: entry.playerResponse || '', // ✅ include response
+      playerResponse: entry.playerResponse || '',
     }));
 
     res.json({
@@ -239,7 +234,7 @@ router.get('/feedback/player/:playerId', verifyRole('coach'), async (req, res) =
           rating: p.rating,
           notes: p.notes,
           focusArea: p.focusArea,
-          playerResponse: p.playerResponse || '', // ✅ include response
+          playerResponse: p.playerResponse || '',
           sessionId: session._id
         }))
     );
@@ -280,23 +275,23 @@ router.get('/player/:playerId/performance', verifyRole('coach'), async (req, res
       avg.batting += e.rating.batting || 0;
       avg.bowling += e.rating.bowling || 0;
       avg.wicketkeeping += e.rating.wicketkeeping || 0;
-      avg.fielding += e.rating.fielding || 0;
-    });
+    avg.fielding += e.rating.fielding || 0;
+  });
 
-    const count = entries.length;
-    const averageRating = count
-      ? {
-          batting: (avg.batting / count).toFixed(2),
-          bowling: (avg.bowling / count).toFixed(2),
-          wicketkeeping: (avg.wicketkeeping / count).toFixed(2),
-          fielding: (avg.fielding / count).toFixed(2)
-        }
-      : null;
+  const count = entries.length;
+  const averageRating = count
+    ? {
+        batting: (avg.batting / count).toFixed(2),
+        bowling: (avg.bowling / count).toFixed(2),
+        wicketkeeping: (avg.wicketkeeping / count).toFixed(2),
+        fielding: (avg.fielding / count).toFixed(2)
+      }
+    : null;
 
-    res.json({ averageRating, entries });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  res.json({ averageRating, entries });
+} catch (err) {
+  res.status(500).json({ error: err.message });
+}
 });
 
 // ✅ GET active players for dropdown filter
@@ -305,30 +300,6 @@ router.get('/players', verifyRole('coach'), async (req, res) => {
     const statusFilter = req.query.status || 'Active';
     const players = await Player.find({ status: statusFilter }).select('firstName lastName _id');
     res.json(players);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ✅ PATCH feedback overwrite (used for bulk updates)
-router.patch('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
-  try {
-    const { feedback } = req.body;
-
-    const updatedPerformance = feedback.map((entry) => ({
-      player: entry.playerId,
-      rating: entry.rating,
-      notes: entry.notes,
-      focusArea: entry.focusArea,
-    }));
-
-    const session = await Session.findByIdAndUpdate(
-      req.params.sessionId,
-      { performance: updatedPerformance },
-      { new: true }
-    );
-
-    res.json({ message: 'Feedback saved', session });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

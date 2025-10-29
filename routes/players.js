@@ -3,6 +3,7 @@ const router = express.Router();
 const { verifyRole } = require('../middleware/auth');
 const Player = require('../models/Player');
 const Session = require('../models/Session');
+const Notification = require('../models/Notification'); // ✅ NEW
 
 // ✅ GET player profile
 router.get('/profile', verifyRole('player'), async (req, res) => {
@@ -64,7 +65,7 @@ router.get('/feedback', verifyRole('player'), async (req, res) => {
           rating: p.rating,
           notes: p.notes,
           focusArea: p.focusArea,
-          playerResponse: p.playerResponse || '', // ✅ include response
+          playerResponse: p.playerResponse || '',
           sessionId: session._id
         }))
     );
@@ -99,7 +100,7 @@ router.get('/performance-chart', verifyRole('player'), async (req, res) => {
   }
 });
 
-// ✅ PATCH player response to coach feedback
+// ✅ PATCH player response to coach feedback + notify coach
 router.patch('/feedback-response/:sessionId', verifyRole('player'), async (req, res) => {
   try {
     const { playerId, responseText } = req.body;
@@ -112,6 +113,16 @@ router.patch('/feedback-response/:sessionId', verifyRole('player'), async (req, 
 
     entry.playerResponse = responseText;
     await session.save();
+
+    // ✅ Notify coach
+    await Notification.create({
+      recipient: session.coach,
+      sender: req.user._id,
+      type: 'response-submitted',
+      session: session._id,
+      player: req.user._id,
+      message: `${req.user.firstName || req.user.username} responded to feedback for session on ${new Date(session.date).toLocaleDateString()}.`,
+    });
 
     res.json({ message: 'Response saved', session });
   } catch (err) {

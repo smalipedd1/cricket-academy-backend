@@ -44,4 +44,6 @@ app.use('/api/dashboard', dashboardRoutes);
 const coachRoutes = require('./routes/coach');
 app.use('/api/coaches', coachRoutes);
 
+app.use('/api/notifications', require('./routes/notifications'));
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
