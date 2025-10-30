@@ -130,4 +130,26 @@ router.patch('/feedback-response/:sessionId', verifyRole('player'), async (req, 
   }
 });
 
+router.get('/session/:id', verifyRole('player'), async (req, res) => {
+  try {
+    const session = await Session.findById(req.params.id)
+      .populate('performance.player', 'firstName lastName username');
+
+    if (!session) return res.status(404).json({ error: 'Session not found' });
+
+    const feedback = session.performance.filter(p =>
+      p.player.toString() === req.user._id.toString()
+    );
+
+    res.json({
+      sessionId: session._id,
+      date: session.date,
+      focusArea: session.focusArea,
+      feedback,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
