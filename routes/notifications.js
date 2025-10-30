@@ -17,7 +17,10 @@ router.get('/', verifyRole('player', 'coach'), async (req, res) => {
       .populate({ path: 'session', select: 'date focusArea' })
       .populate({ path: 'player', select: 'firstName lastName username' });
 
-    console.log('✅ notifications:', notifications);
+    notifications.forEach((n, i) => {
+      console.log(`🔔 Notification ${i + 1}:`, n);
+    });
+
     res.json(notifications);
   } catch (err) {
     console.error('❌ Error fetching notifications:', err);
