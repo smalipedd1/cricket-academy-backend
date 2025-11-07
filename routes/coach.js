@@ -3,7 +3,7 @@ const router = express.Router();
 const { verifyRole } = require('../middleware/auth');
 const Session = require('../models/Session');
 const Player = require('../models/Player');
-const Notification = require('../models/Notification'); // ✅ NEW
+const Notification = require('../models/Notification');
 
 // ✅ GET all players (full list for coach)
 router.get('/player-list', verifyRole('coach'), async (req, res) => {
@@ -145,6 +145,7 @@ router.patch('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
     for (const entry of feedback) {
       await Notification.create({
         recipient: entry.playerId,
+        recipientRole: 'player', // ✅ PATCHED
         sender: req.user._id,
         type: 'feedback-submitted',
         session: session._id,
@@ -275,23 +276,23 @@ router.get('/player/:playerId/performance', verifyRole('coach'), async (req, res
       avg.batting += e.rating.batting || 0;
       avg.bowling += e.rating.bowling || 0;
       avg.wicketkeeping += e.rating.wicketkeeping || 0;
-    avg.fielding += e.rating.fielding || 0;
-  });
+      avg.fielding += e.rating.fielding || 0;
+    });
 
-  const count = entries.length;
-  const averageRating = count
-    ? {
-        batting: (avg.batting / count).toFixed(2),
-        bowling: (avg.bowling / count).toFixed(2),
-        wicketkeeping: (avg.wicketkeeping / count).toFixed(2),
-        fielding: (avg.fielding / count).toFixed(2)
-      }
-    : null;
+    const count = entries.length;
+    const averageRating = count
+      ? {
+          batting: (avg.batting / count).toFixed(2),
+          bowling: (avg.bowling / count).toFixed(2),
+          wicketkeeping: (avg.wicketkeeping / count).toFixed(2),
+          fielding: (avg.fielding / count).toFixed(2)
+        }
+      : null;
 
-  res.json({ averageRating, entries });
-} catch (err) {
-  res.status(500).json({ error: err.message });
-}
+    res.json({ averageRating, entries });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ✅ GET active players for dropdown filter
