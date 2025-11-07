@@ -38,7 +38,7 @@ const verifyRole = (...allowedRoles) => {
       let user;
 
       if (role === 'admin') {
-        user = await Admin.findById(decoded.id); // ✅ fixed
+        user = await Admin.findById(decoded.id); // ✅ fixed from _id
       } else if (role === 'coach') {
         user = await Coach.findById(decoded.id);
       } else if (role === 'player') {
