@@ -144,7 +144,7 @@ router.patch('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
     for (const entry of feedback) {
       await Notification.create({
         recipient: entry.playerId,
-        recipientRole: 'player', // ✅ PATCHED
+        recipientRole: 'player',
         sender: req.user._id,
         type: 'feedback-submitted',
         session: session._id,
@@ -185,7 +185,7 @@ router.get('/feedback/summary', verifyRole('coach'), async (req, res) => {
   }
 });
 
-// ✅ GET a specific session for feedback logging
+// ✅ GET a specific session for feedback logging (patched to include players)
 router.get('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
   try {
     const session = await Session.findOne({
@@ -198,13 +198,15 @@ router.get('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
     if (!session) return res.status(404).json({ error: 'Session not found' });
 
     const feedbackEntries = Array.isArray(session.performance)
-      ? session.performance.map((entry) => ({
-          player: entry.player,
-          rating: entry.rating,
-          notes: entry.notes,
-          focusArea: entry.focusArea || session.focusArea,
-          playerResponse: entry.playerResponse || '',
-        }))
+      ? session.performance
+          .filter(entry => entry && entry.player)
+          .map((entry) => ({
+            player: entry.player,
+            rating: entry.rating,
+            notes: entry.notes,
+            focusArea: entry.focusArea || session.focusArea,
+            playerResponse: entry.playerResponse || '',
+          }))
       : [];
 
     res.json({
@@ -212,6 +214,7 @@ router.get('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
       date: session.date,
       focusArea: session.focusArea,
       coach: session.coach,
+      players: session.players, // ✅ added for frontend fallback
       feedbackEntries,
     });
   } catch (err) {
