@@ -137,9 +137,22 @@ router.get('/session/:id', verifyRole('player'), async (req, res) => {
 
     if (!session) return res.status(404).json({ error: 'Session not found' });
 
-    const feedback = session.performance.filter(p =>
-      p.player.toString() === req.user._id.toString()
+    console.log('🔍 session.performance:', session.performance);
+    console.log('🔍 req.user._id:', req.user._id);
+
+    const feedback = session.performance.filter((p) =>
+      p.player && p.player._id?.toString() === req.user._id.toString()
     );
+
+    if (feedback.length === 0) {
+      return res.status(200).json({
+        sessionId: session._id,
+        date: session.date,
+        focusArea: session.focusArea,
+        feedback: [],
+        message: 'No feedback found for this player',
+      });
+    }
 
     res.json({
       sessionId: session._id,
@@ -148,6 +161,7 @@ router.get('/session/:id', verifyRole('player'), async (req, res) => {
       feedback,
     });
   } catch (err) {
+    console.error('❌ Error in /player/session/:id:', err);
     res.status(500).json({ error: err.message });
   }
 });
