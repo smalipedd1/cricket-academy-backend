@@ -34,25 +34,27 @@ const verifyRole = (...allowedRoles) => {
       const token = authHeader.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+      const role = decoded.role?.toLowerCase();
       let user;
-      if (decoded.role === 'admin') {
-        user = await Admin.findById(decoded._id);
-      } else if (decoded.role === 'coach') {
-        user = await Coach.findById(decoded._id);
-      } else if (decoded.role === 'player') {
-        user = await Player.findById(decoded._id);
+
+      if (role === 'admin') {
+        user = await Admin.findById(decoded.id); // ✅ fixed
+      } else if (role === 'coach') {
+        user = await Coach.findById(decoded.id);
+      } else if (role === 'player') {
+        user = await Player.findById(decoded.id);
       }
 
       if (!user) {
         return res.status(401).json({ error: 'User not found' });
       }
 
-      if (!allowedRoles.includes(decoded.role)) {
+      if (!allowedRoles.includes(role)) {
         return res.status(403).json({ error: 'Access denied' });
       }
 
       req.user = user;
-      req.user.role = decoded.role;
+      req.user.role = role;
 
       next();
     } catch (err) {
