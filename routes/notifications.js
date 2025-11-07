@@ -8,11 +8,14 @@ router.get('/', verifyRole('player', 'coach'), async (req, res) => {
   try {
     console.log('🔍 req.user:', req.user);
 
-    if (!req.user || !req.user._id) {
+    if (!req.user || !req.user._id || !req.user.role) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const notifications = await Notification.find({ recipient: req.user._id })
+    const notifications = await Notification.find({
+      recipient: req.user._id,
+      recipientRole: req.user.role, // ✅ PATCHED
+    })
       .sort({ createdAt: -1 })
       .populate({ path: 'session', select: 'date focusArea' })
       .populate({ path: 'player', select: 'firstName lastName username' });

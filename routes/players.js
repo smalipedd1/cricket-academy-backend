@@ -117,6 +117,7 @@ router.patch('/feedback-response/:sessionId', verifyRole('player'), async (req, 
     // ✅ Notify coach
     await Notification.create({
       recipient: session.coach,
+      recipientRole: 'coach', // ✅ PATCHED
       sender: req.user._id,
       type: 'response-submitted',
       session: session._id,

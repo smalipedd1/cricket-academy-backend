@@ -1,8 +1,9 @@
 const mongoose = require('mongoose');
 
 const notificationSchema = new mongoose.Schema({
-  recipient: { type: mongoose.Schema.Types.ObjectId, required: true }, // removed ref
-  sender: { type: mongoose.Schema.Types.ObjectId }, // removed ref
+  recipient: { type: mongoose.Schema.Types.ObjectId, required: true }, // user ID
+  recipientRole: { type: String, enum: ['player', 'coach', 'admin'], required: true }, // 🔥 add this
+  sender: { type: mongoose.Schema.Types.ObjectId }, // optional
   type: {
     type: String,
     enum: ['feedback-submitted', 'response-submitted'],
