@@ -141,7 +141,6 @@ router.patch('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
       { new: true }
     );
 
-    // ✅ Notify each player
     for (const entry of feedback) {
       await Notification.create({
         recipient: entry.playerId,
@@ -198,13 +197,15 @@ router.get('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
 
     if (!session) return res.status(404).json({ error: 'Session not found' });
 
-    const feedbackEntries = session.performance.map((entry) => ({
-      player: entry.player,
-      rating: entry.rating,
-      notes: entry.notes,
-      focusArea: entry.focusArea || session.focusArea,
-      playerResponse: entry.playerResponse || '',
-    }));
+    const feedbackEntries = Array.isArray(session.performance)
+      ? session.performance.map((entry) => ({
+          player: entry.player,
+          rating: entry.rating,
+          notes: entry.notes,
+          focusArea: entry.focusArea || session.focusArea,
+          playerResponse: entry.playerResponse || '',
+        }))
+      : [];
 
     res.json({
       sessionId: session._id,
