@@ -14,7 +14,7 @@ router.get('/', verifyRole('player', 'coach'), async (req, res) => {
 
     const notifications = await Notification.find({
       recipient: req.user._id,
-      recipientRole: req.user.role, // ✅ PATCHED
+      recipientRole: req.user.role.toLowerCase(), // ✅ PATCHED
     })
       .sort({ createdAt: -1 })
       .populate({ path: 'session', select: 'date focusArea' })
