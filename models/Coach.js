@@ -22,7 +22,7 @@ const coachSchema = new mongoose.Schema({
   specialization: {
     type: String,
     enum: ['Batting', 'Bowling', 'Fitness', 'Fielding', 'Wicketkeeping'],
-    required: true
+    required: false
   },
   status: {
     type: String,
