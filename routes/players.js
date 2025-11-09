@@ -3,7 +3,8 @@ const router = express.Router();
 const { verifyRole } = require('../middleware/auth');
 const Player = require('../models/Player');
 const Session = require('../models/Session');
-const Notification = require('../models/Notification'); // ✅ NEW
+const Notification = require('../models/Notification');
+const PlayerDOB = require('../models/playerDOB');
 
 // ✅ GET player profile
 router.get('/profile', verifyRole('player'), async (req, res) => {
@@ -164,6 +165,49 @@ router.get('/session/:id', verifyRole('player'), async (req, res) => {
   } catch (err) {
     console.error('❌ Error in /player/session/:id:', err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/dob', authenticatePlayer, async (req, res) => {
+  try {
+    const record = await PlayerDOB.findOne({ playerId: req.user.id });
+    res.json({ dob: record?.dob || null });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch DOB' });
+  }
+});
+
+router.post('/dob', authenticatePlayer, async (req, res) => {
+  const { dob } = req.body;
+  if (!dob) return res.status(400).json({ error: 'DOB is required' });
+
+  try {
+    await PlayerDOB.findOneAndUpdate(
+      { playerId: req.user.id },
+      { dob },
+      { upsert: true, new: true }
+    );
+    res.json({ message: 'DOB saved' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to save DOB' });
+  }
+});
+
+router.post('/update-age', authenticatePlayer, async (req, res) => {
+  try {
+    const record = await PlayerDOB.findOne({ playerId: req.user.id });
+    if (!record?.dob) return res.status(400).json({ error: 'DOB not found' });
+
+    const dob = new Date(record.dob);
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+
+    await Player.findByIdAndUpdate(req.user.id, { age });
+    res.json({ message: 'Age updated', age });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update age' });
   }
 });
 
