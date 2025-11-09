@@ -7,6 +7,31 @@ const { verifyRole } = require('../middleware/auth');
 const Session = require('../models/Session');
 const Player = require('../models/Player');
 const Coach = require('../models/Coach');
+const PlayerDOB = require('../models/playerDOB');
+
+router.post('/update-all-ages', verifyRole('admin'), async (req, res) => {
+  try {
+    const records = await PlayerDOB.find({});
+    let updatedCount = 0;
+
+    for (const record of records) {
+      const dob = new Date(record.dob);
+      const today = new Date();
+      let age = today.getFullYear() - dob.getFullYear();
+      const m = today.getMonth() - dob.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+
+      await Player.findByIdAndUpdate(record.playerId, { age });
+      updatedCount++;
+    }
+
+    res.json({ message: `Updated ${updatedCount} player ages.` });
+  } catch (err) {
+    console.error('Bulk age update error:', err);
+    res.status(500).json({ error: 'Failed to update player ages.' });
+  }
+});
+
 
 const SECRET = process.env.JWT_SECRET || 'supersecretkey';
 

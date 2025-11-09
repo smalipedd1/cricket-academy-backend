@@ -5,7 +5,7 @@ const Player = require('../models/Player');
 const Session = require('../models/Session');
 const Notification = require('../models/Notification');
 const PlayerDOB = require('../models/playerDOB');
-const { authenticatePlayer } = require('../middleware/auth');
+
 
 // ✅ GET player profile
 router.get('/profile', verifyRole('player'), async (req, res) => {
@@ -169,7 +169,7 @@ router.get('/session/:id', verifyRole('player'), async (req, res) => {
   }
 });
 
-router.get('/dob', authenticatePlayer, async (req, res) => {
+router.get('/dob', verifyRole('player'), async (req, res) => {
   try {
     const record = await PlayerDOB.findOne({ playerId: req.user.id });
     res.json({ dob: record?.dob || null });
@@ -178,7 +178,7 @@ router.get('/dob', authenticatePlayer, async (req, res) => {
   }
 });
 
-router.post('/dob', authenticatePlayer, async (req, res) => {
+router.post('/dob', verifyRole('player'), async (req, res) => {
   const { dob } = req.body;
   if (!dob) return res.status(400).json({ error: 'DOB is required' });
 
@@ -194,7 +194,7 @@ router.post('/dob', authenticatePlayer, async (req, res) => {
   }
 });
 
-router.post('/update-age', authenticatePlayer, async (req, res) => {
+router.post('/update-age', verifyRole('player'), async (req, res) => {
   try {
     const record = await PlayerDOB.findOne({ playerId: req.user.id });
     if (!record?.dob) return res.status(400).json({ error: 'DOB not found' });
