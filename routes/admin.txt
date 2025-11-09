@@ -14,13 +14,19 @@ const SECRET = process.env.JWT_SECRET || 'supersecretkey';
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
+
     const admin = await Admin.findOne({ username });
     if (!admin) return res.status(401).json({ error: 'Invalid credentials' });
 
     const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
 
-    const token = jwt.sign({ id: admin._id, role: 'admin' }, SECRET, { expiresIn: '1h' });
+    const token = jwt.sign(
+      { id: admin._id, role: 'admin' },
+      SECRET,
+      { expiresIn: '1h' }
+    );
+
     res.json({ token });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -33,9 +39,17 @@ router.get('/dashboard', verifyRole('admin'), async (req, res) => {
     const totalPlayers = await Player.countDocuments();
     const totalCoaches = await Coach.countDocuments();
     const totalSessions = await Session.countDocuments();
-    const sessionsByFocus = await Session.aggregate([{ $group: { _id: '$focusArea', count: { $sum: 1 } } }]);
 
-    res.json({ totalPlayers, totalCoaches, totalSessions, sessionsByFocus });
+    const sessionsByFocus = await Session.aggregate([
+      { $group: { _id: '$focusArea', count: { $sum: 1 } } }
+    ]);
+
+    res.json({
+      totalPlayers,
+      totalCoaches,
+      totalSessions,
+      sessionsByFocus
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -79,24 +93,18 @@ router.get('/coaches', verifyRole('admin'), async (req, res) => {
   }
 });
 
-// ✅ Update coach by ID (with password hashing)
+// ✅ Update coach by ID
 router.put('/coaches/:id', verifyRole('admin'), async (req, res) => {
   try {
-    const updateData = { ...req.body };
-    if (updateData.password) {
-      updateData.password = await bcrypt.hash(updateData.password, 10);
-    }
-
-    const updatedCoach = await Coach.findByIdAndUpdate(req.params.id, updateData, {
-      new: true,
-      runValidators: true,
-    });
-
+    const updatedCoach = await Coach.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
     if (!updatedCoach) return res.status(404).json({ error: 'Coach not found' });
     res.json(updatedCoach);
   } catch (err) {
-    console.error('Coach update error:', err);
-    res.status(500).json({ error: 'Failed to update coach' });
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -111,23 +119,18 @@ router.get('/players', verifyRole('admin'), async (req, res) => {
   }
 });
 
-// ✅ Update player by ID (with password hashing)
+// ✅ Update player by ID
 router.put('/players/:id', verifyRole('admin'), async (req, res) => {
   try {
-    const updateData = { ...req.body };
-    if (updateData.password) {
-      updateData.password = await bcrypt.hash(updateData.password, 10);
-    }
-
-    const updatedPlayer = await Player.findByIdAndUpdate(req.params.id, updateData, {
-      new: true,
-      runValidators: true,
-    });
-
+    const updatedPlayer = await Player.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
     if (!updatedPlayer) return res.status(404).json({ error: 'Player not found' });
     res.json(updatedPlayer);
   } catch (err) {
-    console.error('Player update error:', err);
+    console.error('Error updating player:', err);
     res.status(500).json({ error: 'Failed to update player' });
   }
 });
@@ -156,7 +159,7 @@ router.post('/players', verifyRole('admin'), async (req, res) => {
   }
 });
 
-// ✅ Create sessions (including recurring)
+//✅ Create Sessions
 router.post('/sessions', verifyRole('admin'), async (req, res) => {
   const {
     date,
@@ -166,7 +169,7 @@ router.post('/sessions', verifyRole('admin'), async (req, res) => {
     notes,
     status,
     isRecurring,
-    recurrencePattern,
+    recurrencePattern
   } = req.body;
 
   try {
@@ -176,6 +179,7 @@ router.post('/sessions', verifyRole('admin'), async (req, res) => {
       return res.status(201).json(session);
     }
 
+    // Recurring session generation
     const { dayOfWeek, time, durationMinutes, recurrenceGroupId } = recurrencePattern;
     const sessions = [];
     const startDate = new Date(date);
@@ -193,7 +197,7 @@ router.post('/sessions', verifyRole('admin'), async (req, res) => {
         status,
         isRecurring: true,
         recurrencePattern,
-        recurrenceGroupId,
+        recurrenceGroupId
       });
 
       await session.save();
@@ -207,7 +211,6 @@ router.post('/sessions', verifyRole('admin'), async (req, res) => {
   }
 });
 
-// ✅ Get sessions with filters
 router.get('/sessions', verifyRole('admin'), async (req, res) => {
   const { coachId, startDate, endDate, academyLevel } = req.query;
   const query = {};
@@ -217,12 +220,14 @@ router.get('/sessions', verifyRole('admin'), async (req, res) => {
   if (startDate && endDate) {
     query.date = {
       $gte: new Date(startDate),
-      $lte: new Date(endDate),
+      $lte: new Date(endDate)
     };
   }
 
   try {
-    const sessions = await Session.find(query).populate('coach').populate('players');
+    const sessions = await Session.find(query)
+      .populate('coach')
+      .populate('players');
     res.json(sessions);
   } catch (err) {
     console.error('Error fetching sessions:', err);
