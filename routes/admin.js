@@ -83,6 +83,8 @@ router.get('/coaches', verifyRole('admin'), async (req, res) => {
 router.put('/coaches/:id', verifyRole('admin'), async (req, res) => {
   try {
     const updateData = { ...req.body };
+	console.log('Incoming coach update payload:', req.body);
+
     if (updateData.password) {
       updateData.password = await bcrypt.hash(updateData.password, 10);
     }
