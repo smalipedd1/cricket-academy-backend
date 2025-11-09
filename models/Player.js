@@ -10,7 +10,7 @@ const playerSchema = new mongoose.Schema({
   password: { type: String, required: true },
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
-  age: { type: Number, required: true },
+  age: { type: Number, required: false },
   role: {
     type: String,
     enum: ['Batsman', 'Bowler', 'All-Rounder', 'Wicketkeeper'],
