@@ -5,6 +5,7 @@ const Player = require('../models/Player');
 const Session = require('../models/Session');
 const Notification = require('../models/Notification');
 const PlayerDOB = require('../models/playerDOB');
+const { authenticatePlayer } = require('../middleware/auth');
 
 // ✅ GET player profile
 router.get('/profile', verifyRole('player'), async (req, res) => {
