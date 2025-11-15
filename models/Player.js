@@ -6,11 +6,11 @@ const playerSchema = new mongoose.Schema({
     type: String,
     unique: true,
   },
-  username: { type: String, unique: true, required: true },
+  username: { type: String, unique: true, required: true, trim: true },
   password: { type: String, required: true },
-  firstName: { type: String, required: true },
-  lastName: { type: String, required: true },
-  age: { type: Number, required: false },
+  firstName: { type: String, required: true, trim: true },
+  lastName: { type: String, required: true, trim: true },
+  age: { type: Number },
 
   competitiveStartYear: {
     type: Number,
@@ -28,63 +28,64 @@ const playerSchema = new mongoose.Schema({
   role: {
     type: String,
     enum: ['Batsman', 'Bowler', 'All-Rounder', 'Wicketkeeper'],
-    required: true
+    required: true,
   },
   academyLevel: {
     type: String,
     enum: ['Beginner', 'Intermediate', 'Advanced'],
-    required: true
+    required: true,
   },
   emailAddress: {
     type: String,
     required: true,
-    match: /.+\@.+\..+/
+    match: /.+\@.+\..+/,
+    trim: true,
   },
   cricclubsID: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    trim: true,
   },
   status: {
     type: String,
     enum: ['Active', 'Inactive', 'Suspended', 'Graduated'],
-    default: 'Active'
+    default: 'Active',
   },
   schedule: {
     type: Object,
-    default: {}
+    default: {},
   },
-
   performance: [
     {
       session: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Session',
-        required: true
+        required: true,
       },
       rating: {
-        batting: { type: Number, min: 1, max: 10, default: 0 },
-        bowling: { type: Number, min: 1, max: 10, default: 0 },
-        wicketkeeping: { type: Number, min: 1, max: 10, default: 0 },
-        fielding: { type: Number, min: 1, max: 10, default: 0 }
+        batting: { type: Number, min: 0, max: 10, default: 0 },
+        bowling: { type: Number, min: 0, max: 10, default: 0 },
+        wicketkeeping: { type: Number, min: 0, max: 10, default: 0 },
+        fielding: { type: Number, min: 0, max: 10, default: 0 },
       },
-      notes: { type: String },
+      notes: { type: String, trim: true },
       focusArea: {
         type: String,
         enum: ['Batting', 'Bowling', 'Fielding', 'Fitness', 'Strategy', 'Combined'],
-        required: true
+        required: true,
       },
-      createdAt: { type: Date, default: Date.now }
-    }
+      createdAt: { type: Date, default: Date.now },
+    },
   ],
 
   notes: [
     {
       coachId: { type: mongoose.Schema.Types.ObjectId, ref: 'Coach' },
-      content: String,
-      createdAt: { type: Date, default: Date.now }
-    }
-  ]
+      content: { type: String, trim: true },
+      createdAt: { type: Date, default: Date.now },
+    },
+  ],
 });
 
 playerSchema.pre('save', async function (next) {

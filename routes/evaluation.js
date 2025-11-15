@@ -19,15 +19,25 @@ router.post('/', async (req, res) => {
       totalWickets,
     } = req.body;
 
-    // ✅ Validate coach ID format
     if (!mongoose.Types.ObjectId.isValid(coach)) {
       return res.status(400).json({ error: 'Invalid coach ID format' });
     }
+    if (!mongoose.Types.ObjectId.isValid(player)) {
+      return res.status(400).json({ error: 'Invalid player ID format' });
+    }
 
-    // ✅ Confirm coach exists
     const coachExists = await Coach.findById(coach);
     if (!coachExists) {
       return res.status(404).json({ error: 'Coach not found' });
+    }
+
+    const playerExists = await Player.findById(player);
+    if (!playerExists) {
+      return res.status(404).json({ error: 'Player not found' });
+    }
+
+    if (!feedback || !categories || !coachComments) {
+      return res.status(400).json({ error: 'Missing required evaluation fields' });
     }
 
     const evaluation = new Evaluation({
@@ -35,10 +45,10 @@ router.post('/', async (req, res) => {
       coach,
       feedback,
       categories,
-      coachComments,
-      gamesPlayed,
-      totalRuns,
-      totalWickets,
+      coachComments: coachComments.trim(),
+      gamesPlayed: Number(gamesPlayed) || 0,
+      totalRuns: Number(totalRuns) || 0,
+      totalWickets: Number(totalWickets) || 0,
       notifications: { playerNotified: true },
     });
 
@@ -52,11 +62,32 @@ router.post('/', async (req, res) => {
 // 🔹 Get evaluations for a player
 router.get('/player/:playerId', async (req, res) => {
   try {
-    const evaluations = await Evaluation.find({ player: req.params.playerId })
+    const { playerId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(playerId)) {
+      return res.status(400).json({ error: 'Invalid player ID format' });
+    }
+
+    const evaluations = await Evaluation.find({ player: playerId })
       .populate('coach', 'firstName lastName')
       .sort({ dateOfEvaluation: -1 });
 
-    res.json(evaluations);
+    const formatted = evaluations.map((ev) => ({
+      _id: ev._id,
+      dateOfEvaluation: ev.dateOfEvaluation,
+      coachName: ev.coach?.firstName && ev.coach?.lastName
+        ? `${ev.coach.firstName} ${ev.coach.lastName}`
+        : 'Unknown',
+      feedback: ev.feedback,
+      categories: ev.categories,
+      coachComments: ev.coachComments,
+      gamesPlayed: ev.gamesPlayed,
+      totalRuns: ev.totalRuns,
+      totalWickets: ev.totalWickets,
+      playerResponse: ev.playerResponse,
+    }));
+
+    res.json(formatted);
   } catch (err) {
     console.error('Fetch player evaluations error:', err.message, err.stack);
     res.status(500).json({ error: 'Failed to fetch evaluations' });
@@ -67,11 +98,22 @@ router.get('/player/:playerId', async (req, res) => {
 router.post('/:id/respond', async (req, res) => {
   try {
     const { playerResponse } = req.body;
+    const { id } = req.params;
 
-    const evaluation = await Evaluation.findById(req.params.id);
-    if (!evaluation) return res.status(404).json({ error: 'Evaluation not found' });
+    if (!playerResponse || typeof playerResponse !== 'string') {
+      return res.status(400).json({ error: 'Invalid or missing response text' });
+    }
 
-    evaluation.playerResponse = playerResponse;
+    const evaluation = await Evaluation.findById(id);
+    if (!evaluation) {
+      return res.status(404).json({ error: 'Evaluation not found' });
+    }
+
+    if (evaluation.playerResponded) {
+      return res.status(400).json({ error: 'Response already submitted' });
+    }
+
+    evaluation.playerResponse = playerResponse.trim();
     evaluation.playerResponded = true;
     evaluation.notifications.coachNotified = true;
 
