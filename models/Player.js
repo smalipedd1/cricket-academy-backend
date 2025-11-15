@@ -11,6 +11,20 @@ const playerSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   age: { type: Number, required: false },
+
+  competitiveStartYear: {
+    type: Number,
+    min: 1990,
+    max: new Date().getFullYear(),
+    validate: {
+      validator: function (year) {
+        const currentYear = new Date().getFullYear();
+        return year >= 1990 && year <= currentYear;
+      },
+      message: 'Competitive start year must be between 1990 and the current year',
+    },
+  },
+
   role: {
     type: String,
     enum: ['Batsman', 'Bowler', 'All-Rounder', 'Wicketkeeper'],
@@ -41,28 +55,28 @@ const playerSchema = new mongoose.Schema({
     default: {}
   },
 
-performance: [
-  {
-    session: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Session',
-      required: true
-    },
-    rating: {
-      batting: { type: Number, min: 1, max: 10, default: 0 },
-      bowling: { type: Number, min: 1, max: 10, default: 0 },
-      wicketkeeping: { type: Number, min: 1, max: 10, default: 0 },
-      fielding: { type: Number, min: 1, max: 10, default: 0 }
-    },
-    notes: { type: String },
-    focusArea: {
-      type: String,
-      enum: ['Batting', 'Bowling', 'Fielding', 'Fitness', 'Strategy', 'Combined'],
-      required: true
-    },
-    createdAt: { type: Date, default: Date.now }
-  }
-],
+  performance: [
+    {
+      session: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Session',
+        required: true
+      },
+      rating: {
+        batting: { type: Number, min: 1, max: 10, default: 0 },
+        bowling: { type: Number, min: 1, max: 10, default: 0 },
+        wicketkeeping: { type: Number, min: 1, max: 10, default: 0 },
+        fielding: { type: Number, min: 1, max: 10, default: 0 }
+      },
+      notes: { type: String },
+      focusArea: {
+        type: String,
+        enum: ['Batting', 'Bowling', 'Fielding', 'Fitness', 'Strategy', 'Combined'],
+        required: true
+      },
+      createdAt: { type: Date, default: Date.now }
+    }
+  ],
 
   notes: [
     {
