@@ -1,10 +1,12 @@
 const express = require('express');
 const router = express.Router();
+const { verifyRole } = require('../middleware/auth');
 const fetchCricclubsStats = require('../utils/fetchCricclubsStats');
 
-router.get('/:cricclubsID', async (req, res) => {
+
+router.get('/:id', verifyRole('coach'), async (req, res) => {
   try {
-    const stats = await fetchCricclubsStats(req.params.cricclubsID);
+    const stats = await fetchCricclubsStats(req.params.id);
     res.json(stats);
   } catch (err) {
     console.error('CricClubs fetch error:', err);

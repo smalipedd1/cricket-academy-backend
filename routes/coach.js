@@ -3,6 +3,7 @@ const router = express.Router();
 const { verifyRole } = require('../middleware/auth');
 const Session = require('../models/Session');
 const Player = require('../models/Player');
+const Coach = require('../models/Coach');
 const Notification = require('../models/Notification');
 
 // ✅ GET all players (full list for coach)
@@ -309,5 +310,16 @@ router.get('/players', verifyRole('coach'), async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+router.get('/profile', verifyRole('coach'), async (req, res) => {
+  try {
+    const coach = req.user; // Already populated by verifyRole
+    res.json({ name: `${coach.firstName} ${coach.lastName}` });
+  } catch (err) {
+    console.error('Coach profile error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 
 module.exports = router;
