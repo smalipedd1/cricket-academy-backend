@@ -50,6 +50,9 @@ app.use('/api/evaluations', evaluationRoutes);
 const cricclubsRoutes = require('./routes/cricclubs');
 app.use('/api/cricclubs', cricclubsRoutes);
 
+app.use('/api/coach', require('./routes/coach'));
+
+
 app.use('/api/notifications', require('./routes/notifications'));
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
