@@ -4,6 +4,7 @@ const cheerio = require('cheerio');
 async function fetchCricclubsStats(cricclubsID) {
   const url = `https://cricclubs.com/PremierCricAcad/viewPlayer.do?playerId=${cricclubsID}`;
   console.log(`🌐 Fetching CricClubs stats from: ${url}`);
+  console.log('🔍 Raw HTML snippet:', res.data.slice(0, 1000));
 
   try {
     const res = await axios.get(url, { timeout: 10000 });
