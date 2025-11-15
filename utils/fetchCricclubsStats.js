@@ -1,36 +1,37 @@
-const axios = require('axios');
-const cheerio = require('cheerio');
+const puppeteer = require('puppeteer');
 
 async function fetchCricclubsStats(cricclubsID) {
   const url = `https://cricclubs.com/PremierCricAcad/viewPlayer.do?playerId=${cricclubsID}`;
-  console.log(`🌐 Fetching CricClubs stats from: ${url}`);
+  console.log(`🌐 Launching Puppeteer for: ${url}`);
 
-  try {
-    const res = await axios.get(url, { timeout: 10000 });
-    const $ = cheerio.load(res.data);
+  const browser = await puppeteer.launch({ headless: true });
+  const page = await browser.newPage();
 
-    const name = $('h3.player-name').text().trim();
+  await page.goto(url, { waitUntil: 'networkidle2' });
 
-    const statsList = $('.matches-runs-wickets ul.list-inline li');
-    const gamesPlayed = parseInt($(statsList[0]).find('span').text()) || 0;
-    const totalRuns = parseInt($(statsList[1]).find('span').text()) || 0;
-    const totalWickets = parseInt($(statsList[2]).find('span').text()) || 0;
+  const stats = await page.evaluate(() => {
+    const getText = (selector) => {
+      const el = document.querySelector(selector);
+      return el ? el.textContent.trim() : '0';
+    };
+
+    const listItems = document.querySelectorAll('.matches-runs-wickets ul.list-inline li');
+    const gamesPlayed = parseInt(listItems[0]?.querySelector('span')?.textContent || '0');
+    const totalRuns = parseInt(listItems[1]?.querySelector('span')?.textContent || '0');
+    const totalWickets = parseInt(listItems[2]?.querySelector('span')?.textContent || '0');
+
+    const name = document.querySelector('h3.player-name')?.textContent.trim() || 'Unknown';
 
     return {
-      name: name || 'Unknown',
+      name,
       gamesPlayed,
       totalRuns,
       totalWickets,
     };
-  } catch (err) {
-    console.error('❌ Error fetching CricClubs stats:', err.stack || err.message || err);
-    return {
-      name: 'Unavailable',
-      gamesPlayed: 0,
-      totalRuns: 0,
-      totalWickets: 0,
-    };
-  }
+  });
+
+  await browser.close();
+  return stats;
 }
 
 module.exports = fetchCricclubsStats;
