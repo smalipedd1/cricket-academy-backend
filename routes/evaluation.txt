@@ -32,11 +32,10 @@ router.post('/', async (req, res) => {
 
     await evaluation.save();
     res.status(201).json({ message: 'Evaluation created', evaluation });
-} catch (err) {
-  console.error('Evaluation creation error:', err.message, err.stack);
-  res.status(500).json({ error: err.message });
-}
-
+  } catch (err) {
+    console.error('Evaluation creation error:', err);
+    res.status(500).json({ error: 'Failed to create evaluation' });
+  }
 });
 
 // 🔹 Get evaluations for a player
