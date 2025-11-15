@@ -4,20 +4,17 @@ const cheerio = require('cheerio');
 async function fetchCricclubsStats(cricclubsID) {
   const url = `https://cricclubs.com/PremierCricAcad/viewPlayer.do?playerId=${cricclubsID}`;
   console.log(`🌐 Fetching CricClubs stats from: ${url}`);
-  
 
   try {
     const res = await axios.get(url, { timeout: 10000 });
     const $ = cheerio.load(res.data);
 
     const name = $('h3.player-name').text().trim();
-    const gamesPlayed = parseInt($('#gamesPlayed').text()) || 0;
-    const totalRuns = parseInt($('#totalRuns').text()) || 0;
-    const totalWickets = parseInt($('#totalWickets').text()) || 0;
 
-    if (!name) {
-      console.warn('⚠️ Player name not found on CricClubs page');
-    }
+    const statsList = $('.matches-runs-wickets ul.list-inline li');
+    const gamesPlayed = parseInt($(statsList[0]).find('span').text()) || 0;
+    const totalRuns = parseInt($(statsList[1]).find('span').text()) || 0;
+    const totalWickets = parseInt($(statsList[2]).find('span').text()) || 0;
 
     return {
       name: name || 'Unknown',
