@@ -35,14 +35,15 @@ const verifyRole = (...allowedRoles) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       const role = decoded.role?.toLowerCase();
+      const userId = decoded.id || decoded.userId;
       let user;
 
       if (role === 'admin') {
-        user = await Admin.findById(decoded.id); // ✅ fixed from _id
+        user = await Admin.findById(userId);
       } else if (role === 'coach') {
-        user = await Coach.findById(decoded.id);
+        user = await Coach.findById(userId);
       } else if (role === 'player') {
-        user = await Player.findById(decoded.id);
+        user = await Player.findById(userId);
       }
 
       if (!user) {
