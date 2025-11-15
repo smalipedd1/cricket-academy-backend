@@ -212,4 +212,15 @@ router.post('/update-age', verifyRole('player'), async (req, res) => {
   }
 });
 
+// ✅ GET player by ID (for coach view)
+router.get('/:id', verifyRole('coach'), async (req, res) => {
+  try {
+    const player = await Player.findById(req.params.id);
+    if (!player) return res.status(404).json({ error: 'Player not found' });
+    res.json(player);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
