@@ -7,7 +7,16 @@ const Coach = require('../models/Coach');
 // 🔹 Create a new evaluation
 router.post('/', async (req, res) => {
   try {
-    const { player, coach, feedback, categories, coachComments } = req.body;
+    const {
+      player,
+      coach,
+      feedback,
+      categories,
+      coachComments,
+      gamesPlayed,
+      totalRuns,
+      totalWickets,
+    } = req.body;
 
     const evaluation = new Evaluation({
       player,
@@ -15,6 +24,9 @@ router.post('/', async (req, res) => {
       feedback,
       categories,
       coachComments,
+      gamesPlayed,
+      totalRuns,
+      totalWickets,
       notifications: { playerNotified: true },
     });
 
