@@ -4,34 +4,38 @@ async function fetchCricclubsStats(cricclubsID) {
   const url = `https://cricclubs.com/PremierCricAcad/viewPlayer.do?playerId=${cricclubsID}`;
   console.log(`🌐 Launching Puppeteer for: ${url}`);
 
-  const browser = await puppeteer.launch({ headless: true });
-  const page = await browser.newPage();
+  try {
+    const browser = await puppeteer.launch({ headless: true });
+    const page = await browser.newPage();
 
-  await page.goto(url, { waitUntil: 'networkidle2' });
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 10000 });
 
-  const stats = await page.evaluate(() => {
-    const getText = (selector) => {
-      const el = document.querySelector(selector);
-      return el ? el.textContent.trim() : '0';
-    };
+    const stats = await page.evaluate(() => {
+      const listItems = document.querySelectorAll('.matches-runs-wickets ul.list-inline li');
+      const gamesPlayed = parseInt(listItems[0]?.querySelector('span')?.textContent || '0');
+      const totalRuns = parseInt(listItems[1]?.querySelector('span')?.textContent || '0');
+      const totalWickets = parseInt(listItems[2]?.querySelector('span')?.textContent || '0');
+      const name = document.querySelector('h3.player-name')?.textContent.trim() || 'Unknown';
 
-    const listItems = document.querySelectorAll('.matches-runs-wickets ul.list-inline li');
-    const gamesPlayed = parseInt(listItems[0]?.querySelector('span')?.textContent || '0');
-    const totalRuns = parseInt(listItems[1]?.querySelector('span')?.textContent || '0');
-    const totalWickets = parseInt(listItems[2]?.querySelector('span')?.textContent || '0');
+      return {
+        name,
+        gamesPlayed,
+        totalRuns,
+        totalWickets,
+      };
+    });
 
-    const name = document.querySelector('h3.player-name')?.textContent.trim() || 'Unknown';
-
+    await browser.close();
+    return stats;
+  } catch (err) {
+    console.error('❌ Puppeteer error:', err.stack || err.message || err);
     return {
-      name,
-      gamesPlayed,
-      totalRuns,
-      totalWickets,
+      name: 'Unavailable',
+      gamesPlayed: 0,
+      totalRuns: 0,
+      totalWickets: 0,
     };
-  });
-
-  await browser.close();
-  return stats;
+  }
 }
 
-module.exports = fetchCricclubsStats;	
+module.exports = fetchCricclubsStats;
