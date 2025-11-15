@@ -34,4 +34,4 @@ async function fetchCricclubsStats(cricclubsID) {
   return stats;
 }
 
-module.exports = fetchCricclubsStats;
+module.exports = fetchCricclubsStats;	
