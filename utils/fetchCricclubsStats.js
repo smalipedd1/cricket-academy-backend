@@ -9,7 +9,11 @@ async function fetchCricclubsStats(cricclubsID) {
     const page = await browser.newPage();
 
     await page.goto(url, { waitUntil: 'networkidle2', timeout: 15000 });
-	await page.waitForSelector('.matches-runs-wickets', { timeout: 10000 });
+
+    const html = await page.content();
+    console.log('📄 Page HTML:\n', html); // Dump full HTML for inspection
+
+    await page.waitForSelector('.matches-runs-wickets', { timeout: 10000 });
 
     const stats = await page.evaluate(() => {
       const listItems = document.querySelectorAll('.matches-runs-wickets ul.list-inline li');
@@ -37,6 +41,19 @@ async function fetchCricclubsStats(cricclubsID) {
       totalWickets: 0,
     };
   }
+}
+
+// CLI wrapper for direct testing
+if (require.main === module) {
+  const cricclubsID = process.argv[2];
+  if (!cricclubsID) {
+    console.error('❌ Please provide a CricClubs ID');
+    process.exit(1);
+  }
+
+  fetchCricclubsStats(cricclubsID).then(stats => {
+    console.log('🧪 Stats:', stats);
+  });
 }
 
 module.exports = fetchCricclubsStats;

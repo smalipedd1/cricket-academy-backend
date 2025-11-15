@@ -7,6 +7,21 @@ const evaluationSchema = new mongoose.Schema({
   coach: { type: mongoose.Schema.Types.ObjectId, ref: 'Coach', required: true },
   dateOfEvaluation: { type: Date, default: Date.now },
 
+gamesPlayed: {
+  type: Number,
+  default: 0,
+},
+
+totalRuns: {
+  type: Number,
+  default: 0,
+},
+
+totalWickets: {
+  type: Number,
+  default: 0,
+},
+
   feedback: {
     batting: {
       score: { type: Number, min: 1, max: 10 },
