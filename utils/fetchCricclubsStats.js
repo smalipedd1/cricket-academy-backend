@@ -8,7 +8,8 @@ async function fetchCricclubsStats(cricclubsID) {
     const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
 
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 10000 });
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 15000 });
+	await page.waitForSelector('.matches-runs-wickets', { timeout: 10000 });
 
     const stats = await page.evaluate(() => {
       const listItems = document.querySelectorAll('.matches-runs-wickets ul.list-inline li');
