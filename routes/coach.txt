@@ -311,13 +311,10 @@ router.get('/players', verifyRole('coach'), async (req, res) => {
   }
 });
 
-// ✅ GET full coach profile (used in evaluation form)
 router.get('/profile', verifyRole('coach'), async (req, res) => {
   try {
-    const coach = await Coach.findById(req.user._id).select('_id firstName lastName email role');
-    if (!coach) return res.status(404).json({ error: 'Coach not found' });
-
-    res.json(coach); // ✅ returns full object with _id
+    const coach = req.user; // Already populated by verifyRole
+    res.json({ name: `${coach.firstName} ${coach.lastName}` });
   } catch (err) {
     console.error('Coach profile error:', err);
     res.status(500).json({ error: 'Server error' });
