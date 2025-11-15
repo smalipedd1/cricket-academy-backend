@@ -47,6 +47,9 @@ app.use('/api/coaches', coachRoutes);
 const evaluationRoutes = require('./routes/evaluation');
 app.use('/api/evaluations', evaluationRoutes);
 
+const cricclubsRoutes = require('./routes/cricclubs');
+app.use('/api/cricclubs', cricclubsRoutes);
+
 app.use('/api/notifications', require('./routes/notifications'));
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
