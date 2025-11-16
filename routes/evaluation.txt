@@ -4,8 +4,6 @@ const mongoose = require('mongoose');
 const Evaluation = require('../models/Evaluation');
 const Player = require('../models/Player');
 const Coach = require('../models/Coach');
-const Notification = require('../models/Notification');
-const { io } = require('../socket'); // adjust path if needed
 
 // 🔹 Create a new evaluation
 router.post('/', async (req, res) => {
@@ -55,29 +53,12 @@ router.post('/', async (req, res) => {
     });
 
     await evaluation.save();
-
-    // 🔔 Notify player
-    await Notification.create({
-      userId: player,
-      type: 'evaluation',
-      message: `New evaluation from Coach ${coachExists.firstName} ${coachExists.lastName}`,
-      link: `/player-dashboard?section=evaluations`,
-      read: false,
-      createdAt: new Date()
-    });
-
-    io.to(player.toString()).emit('new-evaluation', {
-      message: `New evaluation from Coach ${coachExists.firstName} ${coachExists.lastName}`,
-      link: `/player-dashboard?section=evaluations`
-    });
-
     res.status(201).json({ message: 'Evaluation created', evaluation });
   } catch (err) {
     console.error('Evaluation creation error:', err.message, err.stack);
     res.status(500).json({ error: err.message });
   }
 });
-
 // 🔹 Get evaluations for a player
 router.get('/player/:playerId', async (req, res) => {
   try {
@@ -123,7 +104,7 @@ router.post('/:id/respond', async (req, res) => {
       return res.status(400).json({ error: 'Invalid or missing response text' });
     }
 
-    const evaluation = await Evaluation.findById(id).populate('coach', 'firstName lastName');
+    const evaluation = await Evaluation.findById(id);
     if (!evaluation) {
       return res.status(404).json({ error: 'Evaluation not found' });
     }
@@ -137,22 +118,6 @@ router.post('/:id/respond', async (req, res) => {
     evaluation.notifications.coachNotified = true;
 
     await evaluation.save();
-
-    // 🔔 Notify coach
-    await Notification.create({
-      userId: evaluation.coach._id,
-      type: 'player-response',
-      message: `Player responded to your evaluation`,
-      link: `/coach-dashboard?section=evaluations`,
-      read: false,
-      createdAt: new Date()
-    });
-
-    io.to(evaluation.coach._id.toString()).emit('new-player-response', {
-      message: `Player responded to your evaluation`,
-      link: `/coach-dashboard?section=evaluations`
-    });
-
     res.json({ message: 'Response submitted', evaluation });
   } catch (err) {
     console.error('Player response error:', err.message, err.stack);
