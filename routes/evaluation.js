@@ -5,7 +5,6 @@ const Evaluation = require('../models/Evaluation');
 const Player = require('../models/Player');
 const Coach = require('../models/Coach');
 const Notification = require('../models/Notification');
-const { io } = require('../socket'); // adjust path if needed
 
 // 🔹 Create a new evaluation
 router.post('/', async (req, res) => {
@@ -66,6 +65,7 @@ router.post('/', async (req, res) => {
       createdAt: new Date()
     });
 
+    const io = req.app.get('io');
     io.to(player.toString()).emit('new-evaluation', {
       message: `New evaluation from Coach ${coachExists.firstName} ${coachExists.lastName}`,
       link: `/player-dashboard?section=evaluations`
@@ -148,6 +148,7 @@ router.post('/:id/respond', async (req, res) => {
       createdAt: new Date()
     });
 
+    const io = req.app.get('io');
     io.to(evaluation.coach._id.toString()).emit('new-player-response', {
       message: `Player responded to your evaluation`,
       link: `/coach-dashboard?section=evaluations`

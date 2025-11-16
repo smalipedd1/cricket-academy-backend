@@ -1,9 +1,31 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const http = require('http');
 require('dotenv').config();
 
 const app = express();
+const server = http.createServer(app); // 🔌 Create HTTP server for Socket.IO
+
+const { Server } = require('socket.io');
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST'],
+  },
+});
+
+// 🔗 Attach io to app so routes can access it via req.app.get('io')
+app.set('io', io);
+
+// 🔐 Optional: join userId room from frontend socket.js
+io.on('connection', (socket) => {
+  const userId = socket.handshake.query.userId;
+  if (userId) {
+    socket.join(userId);
+  }
+});
+
 app.use(cors());
 app.use(express.json());
 
@@ -30,7 +52,7 @@ app.use('/api/player', playerAuthRoutes);
 
 // ✅ Coach routes
 const coachRoutes = require('./routes/coach');
-app.use('/api/coach', coachRoutes); // ✅ Single mount only
+app.use('/api/coach', coachRoutes);
 
 // ✅ Admin routes
 const adminRoutes = require('./routes/admin');
@@ -59,4 +81,5 @@ app.use('/api/cricclubs', cricclubsRoutes);
 // ✅ Notification routes
 app.use('/api/notifications', require('./routes/notifications'));
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// ✅ Start server with Socket.IO
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
