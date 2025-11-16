@@ -6,7 +6,7 @@ const notificationSchema = new mongoose.Schema({
   sender: { type: mongoose.Schema.Types.ObjectId }, // optional
   type: {
     type: String,
-    enum: ['feedback-submitted', 'response-submitted'],
+    enum: ['feedback-submitted', 'response-submitted','evaluation'],
     required: true
   },
   session: { type: mongoose.Schema.Types.ObjectId, ref: 'Session' },

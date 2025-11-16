@@ -57,13 +57,13 @@ router.post('/', async (req, res) => {
 
     // 🔔 Notify player
     await Notification.create({
-      userId: player,
-      type: 'evaluation',
-      message: `New evaluation from Coach ${coachExists.firstName} ${coachExists.lastName}`,
-      link: `/player-dashboard?section=evaluations`,
-      read: false,
-      createdAt: new Date()
-    });
+  recipient: player,
+  recipientRole: 'player',
+  type: 'evaluation',
+  message: `New evaluation from Coach ${coachExists.firstName} ${coachExists.lastName}`,
+  link: `/player-dashboard?section=evaluations`,
+  isRead: false,
+});
 
     const io = req.app.get('io');
     io.to(player.toString()).emit('new-evaluation', {
