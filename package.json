@@ -21,6 +21,7 @@
     "mongoose": "^8.18.2",
     "puppeteer": "^24.30.0",
     "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2"
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "socket.io": "^4.8.1"
   }
 }
