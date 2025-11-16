@@ -61,7 +61,8 @@ router.post('/', async (req, res) => {
   recipientRole: 'player',
   type: 'evaluation',
   message: `New evaluation from Coach ${coachExists.firstName} ${coachExists.lastName}`,
-  link: `/player-dashboard?section=evaluations`,
+  link: `/player/session/${evaluation._id}`, // ✅ direct link to evaluation
+  session: evaluation._id,                  // ✅ enables fallback navigation
   isRead: false,
 });
 
