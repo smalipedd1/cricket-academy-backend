@@ -121,6 +121,10 @@ router.get('/player/:playerId', async (req, res) => {
 
 // 🔹 Player submits response
 router.post('/:id/respond', async (req, res) => {
+  console.log('🔍 Incoming player response');
+  console.log('Params:', req.params);
+  console.log('Body:', req.body);
+
   try {
     const { playerResponse } = req.body;
     const { id } = req.params;
@@ -180,7 +184,8 @@ router.post('/:id/respond', async (req, res) => {
 
     res.json({ message: 'Response submitted', evaluation });
   } catch (err) {
-    console.error('❌ Player response error:', err);
+    console.error('❌ Player response error:', err.message);
+    console.error('🧠 Stack trace:', err.stack);
     res.status(500).json({ error: 'Failed to submit response' });
   }
 });
