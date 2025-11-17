@@ -58,7 +58,6 @@ router.post('/', async (req, res) => {
 
     await evaluation.save();
 
-    // 🔔 Notify player
     await Notification.create({
       recipient: player,
       recipientRole: 'player',
@@ -108,7 +107,7 @@ router.get('/player/:playerId', async (req, res) => {
       totalRuns: ev.totalRuns,
       totalWickets: ev.totalWickets,
       playerResponse: ev.playerResponse,
-      playerResponded: ev.playerResponded,
+      playerResponded: ev.playerResponded, // ✅ critical for frontend sync
     }));
 
     res.json(formatted);
@@ -123,6 +122,8 @@ router.post('/:id/respond', async (req, res) => {
   try {
     const { playerResponse } = req.body;
     const { id } = req.params;
+
+    console.log('🔍 Incoming response:', { id, playerResponse });
 
     if (!playerResponse || typeof playerResponse !== 'string') {
       return res.status(400).json({ error: 'Invalid or missing response text' });
@@ -146,7 +147,6 @@ router.post('/:id/respond', async (req, res) => {
 
     await evaluation.save();
 
-    // 🔔 Notify coach
     await Notification.create({
       userId: evaluation.coach._id,
       type: 'player-response',
@@ -164,7 +164,7 @@ router.post('/:id/respond', async (req, res) => {
 
     res.json({ message: 'Response submitted', evaluation });
   } catch (err) {
-    console.error('Player response error:', err);
+    console.error('❌ Player response error:', err);
     res.status(500).json({ error: 'Failed to submit response' });
   }
 });
