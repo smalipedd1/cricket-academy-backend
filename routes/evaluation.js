@@ -50,31 +50,34 @@ router.post('/', async (req, res) => {
       gamesPlayed: Number(gamesPlayed) || 0,
       totalRuns: Number(totalRuns) || 0,
       totalWickets: Number(totalWickets) || 0,
-      notifications: { playerNotified: true },
+      notifications: {
+        playerNotified: true,
+        coachNotified: false,
+      },
     });
 
     await evaluation.save();
 
     // 🔔 Notify player
     await Notification.create({
-  recipient: player,
-  recipientRole: 'player',
-  type: 'evaluation',
-  message: `New evaluation from Coach ${coachExists.firstName} ${coachExists.lastName}`,
-  link: `/player/session/${evaluation._id}`, // ✅ direct link to evaluation
-  session: evaluation._id,                  // ✅ enables fallback navigation
-  isRead: false,
-});
+      recipient: player,
+      recipientRole: 'player',
+      type: 'evaluation',
+      message: `New evaluation from Coach ${coachExists.firstName} ${coachExists.lastName}`,
+      link: `/player/session/${evaluation._id}`,
+      session: evaluation._id,
+      isRead: false,
+    });
 
     const io = req.app.get('io');
     io.to(player.toString()).emit('new-evaluation', {
       message: `New evaluation from Coach ${coachExists.firstName} ${coachExists.lastName}`,
-      link: `/player-dashboard?section=evaluations`
+      link: `/player-dashboard?section=evaluations`,
     });
 
     res.status(201).json({ message: 'Evaluation created', evaluation });
   } catch (err) {
-    console.error('Evaluation creation error:', err.message, err.stack);
+    console.error('Evaluation creation error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -105,11 +108,12 @@ router.get('/player/:playerId', async (req, res) => {
       totalRuns: ev.totalRuns,
       totalWickets: ev.totalWickets,
       playerResponse: ev.playerResponse,
+      playerResponded: ev.playerResponded,
     }));
 
     res.json(formatted);
   } catch (err) {
-    console.error('Fetch player evaluations error:', err.message, err.stack);
+    console.error('Fetch player evaluations error:', err);
     res.status(500).json({ error: 'Failed to fetch evaluations' });
   }
 });
@@ -135,7 +139,10 @@ router.post('/:id/respond', async (req, res) => {
 
     evaluation.playerResponse = playerResponse.trim();
     evaluation.playerResponded = true;
-    evaluation.notifications.coachNotified = true;
+    evaluation.notifications = {
+      ...evaluation.notifications,
+      coachNotified: true,
+    };
 
     await evaluation.save();
 
@@ -146,18 +153,18 @@ router.post('/:id/respond', async (req, res) => {
       message: `Player responded to your evaluation`,
       link: `/coach-dashboard?section=evaluations`,
       read: false,
-      createdAt: new Date()
+      createdAt: new Date(),
     });
 
     const io = req.app.get('io');
     io.to(evaluation.coach._id.toString()).emit('new-player-response', {
       message: `Player responded to your evaluation`,
-      link: `/coach-dashboard?section=evaluations`
+      link: `/coach-dashboard?section=evaluations`,
     });
 
     res.json({ message: 'Response submitted', evaluation });
   } catch (err) {
-    console.error('Player response error:', err.message, err.stack);
+    console.error('Player response error:', err);
     res.status(500).json({ error: 'Failed to submit response' });
   }
 });
