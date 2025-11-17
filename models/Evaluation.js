@@ -7,20 +7,20 @@ const evaluationSchema = new mongoose.Schema({
   coach: { type: mongoose.Schema.Types.ObjectId, ref: 'Coach', required: true },
   dateOfEvaluation: { type: Date, default: Date.now },
 
-gamesPlayed: {
-  type: Number,
-  default: 0,
-},
+  gamesPlayed: {
+    type: Number,
+    default: 0,
+  },
 
-totalRuns: {
-  type: Number,
-  default: 0,
-},
+  totalRuns: {
+    type: Number,
+    default: 0,
+  },
 
-totalWickets: {
-  type: Number,
-  default: 0,
-},
+  totalWickets: {
+    type: Number,
+    default: 0,
+  },
 
   feedback: {
     batting: {
@@ -79,6 +79,6 @@ totalWickets: {
     coachNotified: { type: Boolean, default: false },
     playerNotified: { type: Boolean, default: false },
   }
-});
+}, { timestamps: true }); // ✅ Adds createdAt and updatedAt
 
 module.exports = mongoose.model('Evaluation', evaluationSchema);
