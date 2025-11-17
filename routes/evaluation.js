@@ -119,19 +119,20 @@ router.get('/player/:playerId', async (req, res) => {
   }
 });
 
-// 🔹 Player submits response (early return version)
+// 🔹 Player submits response
 router.post('/:id/respond', async (req, res) => {
   try {
     const { playerResponse } = req.body;
     const { id } = req.params;
 
-    console.log('🔍 Incoming response:', { id, playerResponse });
-
     if (!playerResponse || typeof playerResponse !== 'string') {
       return res.status(400).json({ error: 'Invalid or missing response text' });
     }
 
-    const evaluation = await Evaluation.findById(id).populate('coach', 'firstName lastName');
+    const evaluation = await Evaluation.findById(id)
+      .populate('coach', 'firstName lastName')
+      .populate('player', 'firstName lastName');
+
     if (!evaluation) {
       return res.status(404).json({ error: 'Evaluation not found' });
     }
@@ -149,32 +150,33 @@ router.post('/:id/respond', async (req, res) => {
 
     await evaluation.save();
 
-    // ✅ EARLY RETURN — skip notification and socket logic
-    return res.json({ message: 'Response submitted', evaluation });
-
-    // Everything below is temporarily disabled
-    /*
     if (evaluation.coach && evaluation.coach._id) {
+      const playerName = evaluation.player
+        ? `${evaluation.player.firstName} ${evaluation.player.lastName}`
+        : 'A player';
+
+      const formattedDate = new Date(evaluation.dateOfEvaluation).toLocaleDateString();
+
       await Notification.create({
-        userId: evaluation.coach._id,
+        recipient: evaluation.coach._id,
+        recipientRole: 'coach',
         type: 'player-response',
-        message: `Player responded to your evaluation`,
-        link: `/coach-dashboard?section=evaluations`,
-        read: false,
-        createdAt: new Date(),
+        message: `${playerName} responded to your evaluation from ${formattedDate}`,
+        link: `/coach/evaluations/${evaluation._id}`,
+        session: evaluation._id,
+        isRead: false,
       });
 
       const io = req.app.get('io');
       if (io) {
         io.to(evaluation.coach._id.toString()).emit('new-player-response', {
-          message: `Player responded to your evaluation`,
-          link: `/coach-dashboard?section=evaluations`,
+          message: `${playerName} responded to your evaluation from ${formattedDate}`,
+          link: `/coach/evaluations/${evaluation._id}`,
         });
       }
-    } else {
-      console.warn('⚠️ Coach info missing — skipping notification and socket emit');
     }
-    */
+
+    res.json({ message: 'Response submitted', evaluation });
   } catch (err) {
     console.error('❌ Player response error:', err);
     res.status(500).json({ error: 'Failed to submit response' });
