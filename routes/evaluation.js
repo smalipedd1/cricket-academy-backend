@@ -103,7 +103,7 @@ router.get('/player/:playerId', async (req, res) => {
         ? `${ev.coach.firstName} ${ev.coach.lastName}`
         : 'Unknown',
       feedback: ev.feedback,
-      categories: ev.categories,
+      categories: transformCategories(ev.categories),
       coachComments: ev.coachComments,
       gamesPlayed: ev.gamesPlayed,
       totalRuns: ev.totalRuns,
@@ -234,7 +234,7 @@ function transformCategories(raw) {
     const { score, comments, skills = {}, ...rest } = section;
     const normalizedSkills = {};
 
-    const rawSkills = skills && Object.keys(skills).length > 0 ? skills : rest;
+    const rawSkills = Object.keys(skills).length ? skills : rest;
 
     for (const [skill, value] of Object.entries(rawSkills)) {
       normalizedSkills[skill] =
