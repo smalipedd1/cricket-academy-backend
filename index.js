@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const http = require('http');
 const socketIO = require('socket.io');
 require('dotenv').config();
+const notificationRoutes = require('./routes/notification');
 
 const app = express(); // ✅ Must be declared before app.use()
 
@@ -30,6 +31,8 @@ app.use('/api/coach', require('./routes/coach'));
 app.use('/api/player', require('./routes/players'));
 app.use('/api', require('./routes/auth'));
 app.use('/api', require('./routes/admin'));
+app.use('/api/notifications', notificationRoutes);
+
 
 // ✅ Create HTTP server and attach Socket.IO
 const server = http.createServer(app);
