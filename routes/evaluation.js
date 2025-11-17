@@ -94,11 +94,11 @@ router.get('/player/:playerId', async (req, res) => {
 
     const evaluations = await Evaluation.find({ player: playerId })
       .populate('coach', 'firstName lastName')
-      .sort({ dateOfEvaluation: -1 });
+      .sort({ createdAt: -1 });
 
     const formatted = evaluations.map((ev) => ({
       _id: ev._id,
-      dateOfEvaluation: ev.dateOfEvaluation,
+      dateOfEvaluation: ev.createdAt,
       coachName: ev.coach?.firstName && ev.coach?.lastName
         ? `${ev.coach.firstName} ${ev.coach.lastName}`
         : 'Unknown',
@@ -155,7 +155,9 @@ router.post('/:id/respond', async (req, res) => {
         ? `${evaluation.player.firstName} ${evaluation.player.lastName}`
         : 'A player';
 
-      const formattedDate = new Date(evaluation.dateOfEvaluation).toLocaleDateString();
+      const formattedDate = evaluation.createdAt
+        ? new Date(evaluation.createdAt).toLocaleDateString()
+        : 'an earlier date';
 
       await Notification.create({
         recipient: evaluation.coach._id,
@@ -180,6 +182,40 @@ router.post('/:id/respond', async (req, res) => {
   } catch (err) {
     console.error('❌ Player response error:', err);
     res.status(500).json({ error: 'Failed to submit response' });
+  }
+});
+
+// 🔹 Get all evaluations for coach dashboard
+router.get('/coach-view', async (req, res) => {
+  try {
+    const evaluations = await Evaluation.find()
+      .populate('player', 'firstName lastName')
+      .populate('coach', 'firstName lastName')
+      .sort({ createdAt: -1 });
+
+    const formatted = evaluations.map((ev) => ({
+      _id: ev._id,
+      playerName: ev.player
+        ? `${ev.player.firstName} ${ev.player.lastName}`
+        : 'Unknown',
+      coachName: ev.coach
+        ? `${ev.coach.firstName} ${ev.coach.lastName}`
+        : 'Unknown',
+      feedback: ev.feedback,
+      categories: ev.categories,
+      coachComments: ev.coachComments,
+      gamesPlayed: ev.gamesPlayed,
+      totalRuns: ev.totalRuns,
+      totalWickets: ev.totalWickets,
+      playerResponded: ev.playerResponded,
+      playerResponse: ev.playerResponse,
+      createdAt: ev.createdAt,
+    }));
+
+    res.json(formatted);
+  } catch (err) {
+    console.error('❌ Coach view error:', err);
+    res.status(500).json({ error: 'Failed to fetch evaluations' });
   }
 });
 
