@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const http = require('http');
 const socketIO = require('socket.io');
 require('dotenv').config();
-const notificationRoutes = require('./routes/notification');
+const notificationRoutes = require('./routes/notifications');
 
 const app = express(); // ✅ Must be declared before app.use()
 
