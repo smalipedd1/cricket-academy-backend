@@ -27,7 +27,7 @@ mongoose.connect(process.env.MONGO_URI, {
 // ✅ Routes
 app.use('/api/evaluations', require('./routes/evaluation'));
 app.use('/api/coach', require('./routes/coach'));
-app.use('/api/player', require('./routes/player'));
+app.use('/api/player', require('./routes/players'));
 
 // ✅ Create HTTP server and attach Socket.IO
 const server = http.createServer(app);
