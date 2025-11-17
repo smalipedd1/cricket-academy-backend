@@ -119,7 +119,7 @@ router.get('/player/:playerId', async (req, res) => {
   }
 });
 
-// 🔹 Player submits response
+// 🔹 Player submits response (early return version)
 router.post('/:id/respond', async (req, res) => {
   try {
     const { playerResponse } = req.body;
@@ -149,6 +149,11 @@ router.post('/:id/respond', async (req, res) => {
 
     await evaluation.save();
 
+    // ✅ EARLY RETURN — skip notification and socket logic
+    return res.json({ message: 'Response submitted', evaluation });
+
+    // Everything below is temporarily disabled
+    /*
     if (evaluation.coach && evaluation.coach._id) {
       await Notification.create({
         userId: evaluation.coach._id,
@@ -169,8 +174,7 @@ router.post('/:id/respond', async (req, res) => {
     } else {
       console.warn('⚠️ Coach info missing — skipping notification and socket emit');
     }
-
-    res.json({ message: 'Response submitted', evaluation });
+    */
   } catch (err) {
     console.error('❌ Player response error:', err);
     res.status(500).json({ error: 'Failed to submit response' });
