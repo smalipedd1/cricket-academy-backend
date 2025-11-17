@@ -207,7 +207,7 @@ router.get('/coach-view', async (req, res) => {
         ? `${ev.coach.firstName} ${ev.coach.lastName}`
         : 'Unknown',
       feedback: ev.feedback,
-      categories: ev.categories,
+      categories: transformCategories(ev.categories),
       coachComments: ev.coachComments,
       gamesPlayed: ev.gamesPlayed,
       totalRuns: ev.totalRuns,
@@ -223,5 +223,31 @@ router.get('/coach-view', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch evaluations' });
   }
 });
+
+// 🔹 Helper to normalize category structure
+function transformCategories(raw) {
+  const output = {};
+  for (const key of ['batting', 'bowling', 'mindset', 'fitness']) {
+    const section = raw[key];
+    if (!section) continue;
+
+    const { score, comments, skills = {}, ...rest } = section;
+    const normalizedSkills = {};
+
+    const rawSkills = skills && Object.keys(skills).length > 0 ? skills : rest;
+
+    for (const [skill, value] of Object.entries(rawSkills)) {
+      normalizedSkills[skill] =
+        typeof value === 'object' ? value : { level: value };
+    }
+
+    output[key] = {
+      score: score ?? null,
+      comments: comments ?? '',
+      skills: normalizedSkills,
+    };
+  }
+  return output;
+}
 
 module.exports = router;
