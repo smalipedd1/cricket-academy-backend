@@ -69,10 +69,12 @@ router.post('/', async (req, res) => {
     });
 
     const io = req.app.get('io');
-    io.to(player.toString()).emit('new-evaluation', {
-      message: `New evaluation from Coach ${coachExists.firstName} ${coachExists.lastName}`,
-      link: `/player-dashboard?section=evaluations`,
-    });
+    if (io) {
+      io.to(player.toString()).emit('new-evaluation', {
+        message: `New evaluation from Coach ${coachExists.firstName} ${coachExists.lastName}`,
+        link: `/player-dashboard?section=evaluations`,
+      });
+    }
 
     res.status(201).json({ message: 'Evaluation created', evaluation });
   } catch (err) {
@@ -107,7 +109,7 @@ router.get('/player/:playerId', async (req, res) => {
       totalRuns: ev.totalRuns,
       totalWickets: ev.totalWickets,
       playerResponse: ev.playerResponse,
-      playerResponded: ev.playerResponded, // ✅ critical for frontend sync
+      playerResponded: ev.playerResponded,
     }));
 
     res.json(formatted);
@@ -147,20 +149,26 @@ router.post('/:id/respond', async (req, res) => {
 
     await evaluation.save();
 
-    await Notification.create({
-      userId: evaluation.coach._id,
-      type: 'player-response',
-      message: `Player responded to your evaluation`,
-      link: `/coach-dashboard?section=evaluations`,
-      read: false,
-      createdAt: new Date(),
-    });
+    if (evaluation.coach && evaluation.coach._id) {
+      await Notification.create({
+        userId: evaluation.coach._id,
+        type: 'player-response',
+        message: `Player responded to your evaluation`,
+        link: `/coach-dashboard?section=evaluations`,
+        read: false,
+        createdAt: new Date(),
+      });
 
-    const io = req.app.get('io');
-    io.to(evaluation.coach._id.toString()).emit('new-player-response', {
-      message: `Player responded to your evaluation`,
-      link: `/coach-dashboard?section=evaluations`,
-    });
+      const io = req.app.get('io');
+      if (io) {
+        io.to(evaluation.coach._id.toString()).emit('new-player-response', {
+          message: `Player responded to your evaluation`,
+          link: `/coach-dashboard?section=evaluations`,
+        });
+      }
+    } else {
+      console.warn('⚠️ Coach info missing — skipping notification and socket emit');
+    }
 
     res.json({ message: 'Response submitted', evaluation });
   } catch (err) {
