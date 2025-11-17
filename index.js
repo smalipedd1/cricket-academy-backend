@@ -1,90 +1,63 @@
 const express = require('express');
+const cors = require('cors');
+const mongoose = require('mongoose');
+const http = require('http');
+const socketIO = require('socket.io');
+require('dotenv').config();
+
+const app = express(); // ✅ Must be declared before app.use()
+
+// ✅ CORS configuration to allow frontend domain
 const allowedOrigins = ['https://cricket-academy-frontend-px1s.onrender.com'];
 
 app.use(cors({
   origin: allowedOrigins,
   credentials: true,
 }));
-const mongoose = require('mongoose');
-const http = require('http');
-require('dotenv').config();
 
-const app = express();
-const server = http.createServer(app); // 🔌 Create HTTP server for Socket.IO
+app.use(express.json());
 
-const { Server } = require('socket.io');
-const io = new Server(server, {
+// ✅ Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+}).then(() => console.log('✅ MongoDB connected'))
+  .catch((err) => console.error('❌ MongoDB connection error:', err));
+
+// ✅ Routes
+app.use('/api/evaluations', require('./routes/evaluation'));
+app.use('/api/coach', require('./routes/coach'));
+app.use('/api/player', require('./routes/player'));
+
+// ✅ Create HTTP server and attach Socket.IO
+const server = http.createServer(app);
+
+const io = socketIO(server, {
   cors: {
-    origin: '*',
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
+    credentials: true,
   },
 });
 
-// 🔗 Attach io to app so routes can access it via req.app.get('io')
+// ✅ Attach io to app for access in routes
 app.set('io', io);
 
-// 🔐 Optional: join userId room from frontend socket.js
+// ✅ Handle socket connections
 io.on('connection', (socket) => {
   const userId = socket.handshake.query.userId;
   if (userId) {
     socket.join(userId);
+    console.log(`🔌 User connected: ${userId}`);
   }
+
+  socket.on('disconnect', () => {
+    console.log(`❌ User disconnected: ${userId}`);
+  });
 });
 
-app.use(cors());
-app.use(express.json());
-
-app.get('/', (req, res) => {
-  res.send('Cricket Academy API is running');
+// ✅ Start server
+const PORT = process.env.PORT || 10000;
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
-
-// Disable command buffering to avoid silent timeouts
-mongoose.set('bufferCommands', false);
-
-// Connect to MongoDB with recommended options
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch((err) => console.error('MongoDB connection error:', err));
-
-const PORT = process.env.PORT || 5000;
-
-// ✅ Player routes
-const playerRoutes = require('./routes/players');
-app.use('/api/player', playerRoutes);
-
-const playerAuthRoutes = require('./routes/playerAuth');
-app.use('/api/player', playerAuthRoutes);
-
-// ✅ Coach routes
-const coachRoutes = require('./routes/coach');
-app.use('/api/coach', coachRoutes);
-
-// ✅ Admin routes
-const adminRoutes = require('./routes/admin');
-app.use('/api/admin', adminRoutes);
-
-// ✅ Session routes
-const sessionRoutes = require('./routes/sessions');
-app.use('/api/sessions', sessionRoutes);
-
-// ✅ Auth routes
-const authRoutes = require('./routes/auth');
-app.use('/api', authRoutes);
-
-// ✅ Dashboard routes
-const dashboardRoutes = require('./routes/dashboard');
-app.use('/api/dashboard', dashboardRoutes);
-
-// ✅ Evaluation routes
-const evaluationRoutes = require('./routes/evaluation');
-app.use('/api/evaluations', evaluationRoutes);
-
-// ✅ CricClubs routes
-const cricclubsRoutes = require('./routes/cricclubs');
-app.use('/api/cricclubs', cricclubsRoutes);
-
-// ✅ Notification routes
-app.use('/api/notifications', require('./routes/notifications'));
-
-// ✅ Start server with Socket.IO
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
