@@ -1,5 +1,10 @@
 const express = require('express');
-const cors = require('cors');
+const allowedOrigins = ['https://cricket-academy-frontend-px1s.onrender.com'];
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
 const mongoose = require('mongoose');
 const http = require('http');
 require('dotenv').config();
