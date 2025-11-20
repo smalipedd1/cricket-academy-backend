@@ -11,7 +11,7 @@ const PlayerDOB = require('../models/playerDOB');
 
 const SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
-// ✅ Admin login
+// Admin login
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -28,7 +28,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// ✅ Admin dashboard
+// Admin dashboard
 router.get('/dashboard', verifyRole('admin'), async (req, res) => {
   try {
     const totalPlayers = await Player.countDocuments();
@@ -44,7 +44,7 @@ router.get('/dashboard', verifyRole('admin'), async (req, res) => {
   }
 });
 
-// ✅ Admin profile
+// Admin profile
 router.get('/', verifyRole('admin'), async (req, res) => {
   try {
     const admin = await Admin.findById(req.userId).select('-password');
@@ -55,7 +55,7 @@ router.get('/', verifyRole('admin'), async (req, res) => {
   }
 });
 
-// ✅ Admin registration
+// Admin registration
 router.post('/', verifyRole('admin'), async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -72,7 +72,7 @@ router.post('/', verifyRole('admin'), async (req, res) => {
   }
 });
 
-// ✅ Update all player ages
+// Update all player ages
 router.post('/update-all-ages', verifyRole('admin'), async (req, res) => {
   try {
     const records = await PlayerDOB.find({});
@@ -96,7 +96,7 @@ router.post('/update-all-ages', verifyRole('admin'), async (req, res) => {
   }
 });
 
-// ✅ Get all coaches
+// Get all coaches
 router.get('/coaches', verifyRole('admin'), async (req, res) => {
   try {
     const coaches = await Coach.find();
@@ -106,7 +106,7 @@ router.get('/coaches', verifyRole('admin'), async (req, res) => {
   }
 });
 
-// ✅ Update coach
+// Update coach
 router.put('/coaches/:id', verifyRole('admin'), async (req, res) => {
   try {
     const updateData = { ...req.body };
@@ -126,7 +126,7 @@ router.put('/coaches/:id', verifyRole('admin'), async (req, res) => {
   }
 });
 
-// ✅ Create coach
+// Create coach
 router.post('/coaches', verifyRole('admin'), async (req, res) => {
   try {
     const newCoach = new Coach(req.body);
@@ -137,7 +137,7 @@ router.post('/coaches', verifyRole('admin'), async (req, res) => {
   }
 });
 
-// ✅ Get all players
+// Get all players
 router.get('/players', verifyRole('admin'), async (req, res) => {
   try {
     const players = await Player.find();
@@ -147,7 +147,7 @@ router.get('/players', verifyRole('admin'), async (req, res) => {
   }
 });
 
-// ✅ Update player
+// Update player
 router.put('/players/:id', verifyRole('admin'), async (req, res) => {
   try {
     const updateData = { ...req.body };
@@ -167,7 +167,7 @@ router.put('/players/:id', verifyRole('admin'), async (req, res) => {
   }
 });
 
-// ✅ Create player
+// Create player
 router.post('/players', verifyRole('admin'), async (req, res) => {
   try {
     const newPlayer = new Player(req.body);
@@ -178,7 +178,7 @@ router.post('/players', verifyRole('admin'), async (req, res) => {
   }
 });
 
-// ✅ Create session(s)
+// Create session(s)
 router.post('/sessions', verifyRole('admin'), async (req, res) => {
   const {
     date,
@@ -214,7 +214,12 @@ router.post('/sessions', verifyRole('admin'), async (req, res) => {
       return res.status(201).json(session);
     }
 
+    if (!recurrencePattern) {
+      return res.status(400).json({ error: 'Missing recurrencePattern for recurring session' });
+    }
+
     const { dayOfWeek, time, durationMinutes, recurrenceGroupId } = recurrencePattern;
+
     const sessions = [];
     const startDate = new Date(date);
 
@@ -241,12 +246,12 @@ router.post('/sessions', verifyRole('admin'), async (req, res) => {
 
     return res.status(201).json(sessions);
   } catch (err) {
-    console.error('Error creating session:', err.message, err.errors);
+    console.error('❌ Session creation error:', err.message, err.errors);
     res.status(500).json({ error: err.message });
   }
 });
 
-// ✅ Get sessions with filters
+// Get sessions with filters
 router.get('/sessions', verifyRole('admin'), async (req, res) => {
   const { coachId, startDate, endDate, academyLevel } = req.query;
   const query = {};
