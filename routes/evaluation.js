@@ -224,6 +224,46 @@ router.get('/coach-view', async (req, res) => {
   }
 });
 
+// 🔹 Get a single evaluation by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'Invalid evaluation ID format' });
+    }
+
+    const evaluation = await Evaluation.findById(id)
+      .populate('coach', 'firstName lastName')
+      .populate('player', 'firstName lastName');
+
+    if (!evaluation) {
+      return res.status(404).json({ error: 'Evaluation not found' });
+    }
+
+    const formatted = {
+      _id: evaluation._id,
+      createdAt: evaluation.createdAt,
+      coachName: evaluation.coach
+        ? `${evaluation.coach.firstName} ${evaluation.coach.lastName}`
+        : 'Unknown',
+      feedback: evaluation.feedback,
+      categories: transformCategories(evaluation.categories),
+      coachComments: evaluation.coachComments,
+      gamesPlayed: evaluation.gamesPlayed,
+      totalRuns: evaluation.totalRuns,
+      totalWickets: evaluation.totalWickets,
+      playerResponse: evaluation.playerResponse,
+      playerResponded: evaluation.playerResponded,
+    };
+
+    res.json(formatted);
+  } catch (err) {
+    console.error('❌ Error fetching evaluation by ID:', err);
+    res.status(500).json({ error: 'Failed to fetch evaluation' });
+  }
+});
+
 // 🔹 Helper to normalize category structure
 function transformCategories(raw) {
   const output = {};
