@@ -9,6 +9,70 @@ const Player = require('../models/Player');
 const Coach = require('../models/Coach');
 const PlayerDOB = require('../models/playerDOB');
 
+const SECRET = process.env.JWT_SECRET || 'supersecretkey';
+
+// ✅ Admin login
+router.post('/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const admin = await Admin.findOne({ username });
+    if (!admin) return res.status(401).json({ error: 'Invalid credentials' });
+
+    const isMatch = await bcrypt.compare(password, admin.password);
+    if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
+
+    const token = jwt.sign({ id: admin._id, role: 'admin' }, SECRET, { expiresIn: '1h' });
+    res.json({ token });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ✅ Admin dashboard
+router.get('/dashboard', verifyRole('admin'), async (req, res) => {
+  try {
+    const totalPlayers = await Player.countDocuments();
+    const totalCoaches = await Coach.countDocuments();
+    const totalSessions = await Session.countDocuments();
+    const sessionsByFocus = await Session.aggregate([
+      { $group: { _id: '$focusArea', count: { $sum: 1 } } },
+    ]);
+
+    res.json({ totalPlayers, totalCoaches, totalSessions, sessionsByFocus });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ✅ Admin profile
+router.get('/', verifyRole('admin'), async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.userId).select('-password');
+    if (!admin) return res.status(404).json({ error: 'Admin not found' });
+    res.json(admin);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ✅ Admin registration
+router.post('/', verifyRole('admin'), async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const existing = await Admin.findOne({ username });
+    if (existing) return res.status(400).json({ error: 'Username already exists' });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newAdmin = new Admin({ username, password: hashedPassword });
+
+    await newAdmin.save();
+    res.status(201).json({ message: 'Admin created successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ✅ Update all player ages
 router.post('/update-all-ages', verifyRole('admin'), async (req, res) => {
   try {
     const records = await PlayerDOB.find({});
@@ -32,68 +96,6 @@ router.post('/update-all-ages', verifyRole('admin'), async (req, res) => {
   }
 });
 
-
-const SECRET = process.env.JWT_SECRET || 'supersecretkey';
-
-// ✅ Admin login route
-router.post('/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    const admin = await Admin.findOne({ username });
-    if (!admin) return res.status(401).json({ error: 'Invalid credentials' });
-
-    const isMatch = await bcrypt.compare(password, admin.password);
-    if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
-
-    const token = jwt.sign({ id: admin._id, role: 'admin' }, SECRET, { expiresIn: '1h' });
-    res.json({ token });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ✅ Admin dashboard route
-router.get('/dashboard', verifyRole('admin'), async (req, res) => {
-  try {
-    const totalPlayers = await Player.countDocuments();
-    const totalCoaches = await Coach.countDocuments();
-    const totalSessions = await Session.countDocuments();
-    const sessionsByFocus = await Session.aggregate([{ $group: { _id: '$focusArea', count: { $sum: 1 } } }]);
-
-    res.json({ totalPlayers, totalCoaches, totalSessions, sessionsByFocus });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ✅ Admin profile route
-router.get('/', verifyRole('admin'), async (req, res) => {
-  try {
-    const admin = await Admin.findById(req.userId).select('-password');
-    if (!admin) return res.status(404).json({ error: 'Admin not found' });
-    res.json(admin);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ✅ Admin registration route
-router.post('/', verifyRole('admin'), async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    const existing = await Admin.findOne({ username });
-    if (existing) return res.status(400).json({ error: 'Username already exists' });
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newAdmin = new Admin({ username, password: hashedPassword });
-
-    await newAdmin.save();
-    res.status(201).json({ message: 'Admin created successfully' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 // ✅ Get all coaches
 router.get('/coaches', verifyRole('admin'), async (req, res) => {
   try {
@@ -104,12 +106,10 @@ router.get('/coaches', verifyRole('admin'), async (req, res) => {
   }
 });
 
-// ✅ Update coach by ID (with password hashing)
+// ✅ Update coach
 router.put('/coaches/:id', verifyRole('admin'), async (req, res) => {
   try {
     const updateData = { ...req.body };
-	console.log('Incoming coach update payload:', req.body);
-
     if (updateData.password) {
       updateData.password = await bcrypt.hash(updateData.password, 10);
     }
@@ -122,8 +122,18 @@ router.put('/coaches/:id', verifyRole('admin'), async (req, res) => {
     if (!updatedCoach) return res.status(404).json({ error: 'Coach not found' });
     res.json(updatedCoach);
   } catch (err) {
-    console.error('Coach update error:', err);
     res.status(500).json({ error: 'Failed to update coach' });
+  }
+});
+
+// ✅ Create coach
+router.post('/coaches', verifyRole('admin'), async (req, res) => {
+  try {
+    const newCoach = new Coach(req.body);
+    await newCoach.save();
+    res.status(201).json(newCoach);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to create coach' });
   }
 });
 
@@ -133,12 +143,11 @@ router.get('/players', verifyRole('admin'), async (req, res) => {
     const players = await Player.find();
     res.json(players);
   } catch (err) {
-    console.error('Error fetching players:', err);
     res.status(500).json({ error: 'Failed to fetch players' });
   }
 });
 
-// ✅ Update player by ID (with password hashing)
+// ✅ Update player
 router.put('/players/:id', verifyRole('admin'), async (req, res) => {
   try {
     const updateData = { ...req.body };
@@ -154,51 +163,53 @@ router.put('/players/:id', verifyRole('admin'), async (req, res) => {
     if (!updatedPlayer) return res.status(404).json({ error: 'Player not found' });
     res.json(updatedPlayer);
   } catch (err) {
-    console.error('Player update error:', err);
     res.status(500).json({ error: 'Failed to update player' });
   }
 });
 
-// ✅ Create new coach
-router.post('/coaches', verifyRole('admin'), async (req, res) => {
-  try {
-    const newCoach = new Coach(req.body);
-    await newCoach.save();
-    res.status(201).json(newCoach);
-  } catch (err) {
-    console.error('Error creating coach:', err);
-    res.status(500).json({ error: 'Failed to create coach' });
-  }
-});
-
-// ✅ Create new player
+// ✅ Create player
 router.post('/players', verifyRole('admin'), async (req, res) => {
   try {
     const newPlayer = new Player(req.body);
     await newPlayer.save();
     res.status(201).json(newPlayer);
   } catch (err) {
-    console.error('Error creating player:', err);
     res.status(500).json({ error: 'Failed to create player' });
   }
 });
 
-// ✅ Create sessions (including recurring)
+// ✅ Create session(s)
 router.post('/sessions', verifyRole('admin'), async (req, res) => {
   const {
     date,
     focusArea,
     coach,
     players,
-    notes,
-    status,
+    notes = '',
+    status = 'Active',
     isRecurring,
     recurrencePattern,
   } = req.body;
 
   try {
+    const performance = players.map(playerId => ({
+      player: playerId,
+      rating: {},
+      notes: '',
+      focusArea,
+      playerResponse: '',
+    }));
+
     if (!isRecurring) {
-      const session = new Session({ date, focusArea, coach, players, notes, status });
+      const session = new Session({
+        date,
+        focusArea,
+        coach,
+        players,
+        notes,
+        status,
+        performance,
+      });
       await session.save();
       return res.status(201).json(session);
     }
@@ -218,6 +229,7 @@ router.post('/sessions', verifyRole('admin'), async (req, res) => {
         players,
         notes,
         status,
+        performance,
         isRecurring: true,
         recurrencePattern,
         recurrenceGroupId,
@@ -229,7 +241,7 @@ router.post('/sessions', verifyRole('admin'), async (req, res) => {
 
     return res.status(201).json(sessions);
   } catch (err) {
-    console.error('Error creating session:', err);
+    console.error('Error creating session:', err.message, err.errors);
     res.status(500).json({ error: err.message });
   }
 });
@@ -252,7 +264,6 @@ router.get('/sessions', verifyRole('admin'), async (req, res) => {
     const sessions = await Session.find(query).populate('coach').populate('players');
     res.json(sessions);
   } catch (err) {
-    console.error('Error fetching sessions:', err);
     res.status(500).json({ error: err.message });
   }
 });
