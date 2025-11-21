@@ -31,7 +31,7 @@ app.use('/api/coach', require('./routes/coach'));
 app.use('/api/player', require('./routes/players'));
 app.use('/api', require('./routes/auth'));
 app.use('/api/admin', require('./routes/admin'));
-//app.use('/api', require('./routes/admin'));
+app.use('/api', require('./routes/admin'));
 app.use('/api/notifications', notificationRoutes);
 
 
