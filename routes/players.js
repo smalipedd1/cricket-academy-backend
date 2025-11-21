@@ -105,7 +105,8 @@ router.get('/performance-chart', verifyRole('player'), async (req, res) => {
 // ✅ PATCH player response to coach feedback + notify coach
 router.patch('/feedback-response/:sessionId', verifyRole('player'), async (req, res) => {
   try {
-    const { playerId, responseText } = req.body;
+    const { responseText } = req.body;
+	const playerId = req.user._id;
 
     const session = await Session.findById(req.params.sessionId);
     if (!session) return res.status(404).json({ error: 'Session not found' });
