@@ -43,6 +43,7 @@ router.get('/dashboard', verifyRole('admin'), async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 // Admin profile
 router.get('/', verifyRole('admin'), async (req, res) => {
   try {
@@ -71,6 +72,30 @@ router.post('/', verifyRole('admin'), async (req, res) => {
   }
 });
 
+// Update all player ages
+router.post('/update-all-ages', verifyRole('admin'), async (req, res) => {
+  try {
+    const records = await PlayerDOB.find({});
+    let updatedCount = 0;
+
+    for (const record of records) {
+      const dob = new Date(record.dob);
+      const today = new Date();
+      let age = today.getFullYear() - dob.getFullYear();
+      const m = today.getMonth() - dob.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+
+      await Player.findByIdAndUpdate(record.playerId, { age });
+      updatedCount++;
+    }
+
+    res.json({ message: `Updated ${updatedCount} player ages.` });
+  } catch (err) {
+    console.error('Bulk age update error:', err);
+    res.status(500).json({ error: 'Failed to update player ages.' });
+  }
+});
+
 // Get all coaches
 router.get('/coaches', verifyRole('admin'), async (req, res) => {
   try {
@@ -78,6 +103,26 @@ router.get('/coaches', verifyRole('admin'), async (req, res) => {
     res.json(coaches);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Update coach
+router.put('/coaches/:id', verifyRole('admin'), async (req, res) => {
+  try {
+    const updateData = { ...req.body };
+    if (updateData.password) {
+      updateData.password = await bcrypt.hash(updateData.password, 10);
+    }
+
+    const updatedCoach = await Coach.findByIdAndUpdate(req.params.id, updateData, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!updatedCoach) return res.status(404).json({ error: 'Coach not found' });
+    res.json(updatedCoach);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update coach' });
   }
 });
 
@@ -102,6 +147,26 @@ router.get('/players', verifyRole('admin'), async (req, res) => {
   }
 });
 
+// Update player
+router.put('/players/:id', verifyRole('admin'), async (req, res) => {
+  try {
+    const updateData = { ...req.body };
+    if (updateData.password) {
+      updateData.password = await bcrypt.hash(updateData.password, 10);
+    }
+
+    const updatedPlayer = await Player.findByIdAndUpdate(req.params.id, updateData, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!updatedPlayer) return res.status(404).json({ error: 'Player not found' });
+    res.json(updatedPlayer);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update player' });
+  }
+});
+
 // Create player
 router.post('/players', verifyRole('admin'), async (req, res) => {
   try {
@@ -112,6 +177,7 @@ router.post('/players', verifyRole('admin'), async (req, res) => {
     res.status(500).json({ error: 'Failed to create player' });
   }
 });
+
 // Create session(s)
 router.post('/sessions', verifyRole('admin'), async (req, res) => {
   const {
@@ -123,7 +189,6 @@ router.post('/sessions', verifyRole('admin'), async (req, res) => {
     status = 'Active',
     isRecurring,
     recurrencePattern,
-    recurrenceWeeks = 1, // default to 1 if not provided
   } = req.body;
 
   try {
@@ -135,7 +200,6 @@ router.post('/sessions', verifyRole('admin'), async (req, res) => {
       playerResponse: '',
     }));
 
-    // ✅ Single session
     if (!isRecurring) {
       const session = new Session({
         date,
@@ -150,17 +214,16 @@ router.post('/sessions', verifyRole('admin'), async (req, res) => {
       return res.status(201).json(session);
     }
 
-    // ✅ Recurring sessions
     if (!recurrencePattern) {
       return res.status(400).json({ error: 'Missing recurrencePattern for recurring session' });
     }
 
-    const { dayOfWeek, recurrenceGroupId } = recurrencePattern;
+    const { dayOfWeek, time, durationMinutes, recurrenceGroupId } = recurrencePattern;
 
     const sessions = [];
     const startDate = new Date(date);
 
-    for (let i = 0; i < recurrenceWeeks; i++) {
+    for (let i = 0; i < 12; i++) {
       const nextDate = new Date(startDate);
       nextDate.setDate(startDate.getDate() + i * 7);
 
@@ -173,7 +236,8 @@ router.post('/sessions', verifyRole('admin'), async (req, res) => {
         status,
         performance,
         isRecurring: true,
-        recurrencePattern: { dayOfWeek, recurrenceGroupId },
+        recurrencePattern,
+        recurrenceGroupId,
       });
 
       await session.save();
@@ -183,19 +247,6 @@ router.post('/sessions', verifyRole('admin'), async (req, res) => {
     return res.status(201).json(sessions);
   } catch (err) {
     console.error('❌ Session creation error:', err.message, err.errors);
-    res.status(500).json({ error: err.message });
-  }
-});
-// Delete a session
-router.delete('/sessions/:id', verifyRole('admin'), async (req, res) => {
-  try {
-    const deleted = await Session.findByIdAndDelete(req.params.id);
-    if (!deleted) {
-      return res.status(404).json({ error: 'Session not found' });
-    }
-    res.json({ message: 'Session deleted successfully' });
-  } catch (err) {
-    console.error('❌ Session delete error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
