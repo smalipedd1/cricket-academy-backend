@@ -117,12 +117,12 @@ router.patch('/feedback-response/:sessionId', verifyRole('player'), async (req, 
     entry.playerResponse = responseText;
     await session.save();
 
-    res.json({ message: 'Response saved', session });
-  } catch (err) {
-    console.error('Error in feedback-response:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
+ //   res.json({ message: 'Response saved', session });
+ // } catch (err) {
+ //   console.error('Error in feedback-response:', err);
+ //   res.status(500).json({ error: err.message });
+ // }
+//});
 
 
     // ✅ Notify coach
