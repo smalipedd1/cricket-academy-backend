@@ -75,7 +75,7 @@ router.post('/', async (req, res) => {
         playerExists.emailAddress,
         'New Evaluation Submitted',
         `Coach ${coachExists.firstName} ${coachExists.lastName} has submitted an evaluation.`,
-        `<p>Coach <strong>${coachExists.firstName} ${coachExists.lastName}</strong> has submitted an evaluation for you on <em>${new Date().toLocaleDateString()}</em>.<br/>Login to view: <a href="https://cricket-academy-frontend-px1s.onrender.com/login">Academy Portal</a></p>`
+        `<p>Coach <strong>${coachExists.firstName} ${coachExists.lastName}</strong> has submitted an evaluation for you on <em>${new Date().toLocaleDateString()}</em>.<br/>Login to view: <a href="https://cricket-academy-frontend-px1s.onrender.com">Academy Portal</a></p>`
       );
     }
     // 🔹 END EMAIL NOTIFICATION
@@ -184,6 +184,17 @@ router.post('/:id/respond', async (req, res) => {
         session: evaluation._id,
         isRead: false,
       });
+
+// 🔹 Email notification to coach
+const coachDoc = await Coach.findById(evaluation.coach._id);
+if (coachDoc?.email) {
+  await sendMail(
+    coachDoc.email,
+    'Evaluation Response',
+    `${playerName} responded to your evaluation from ${formattedDate}`,
+    `<p>Player <strong>${playerName}</strong> responded to your evaluation from <em>${formattedDate}</em>.<br/>Login to view: <a href="https://cricket-academy-frontend-px1s.onrender.com">Academy Portal</a></p>`
+  );
+}
 
       const io = req.app.get('io');
       if (io) {
