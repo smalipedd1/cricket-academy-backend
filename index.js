@@ -33,6 +33,8 @@ app.use('/api', require('./routes/auth'));
 app.use('/api/admin', require('./routes/admin'));
 //app.use('/api', require('./routes/admin'));
 app.use('/api/notifications', notificationRoutes);
+app.get('/', (req, res) => {
+  res.send('Cricket Academy Backend is running');
 
 
 // ✅ Create HTTP server and attach Socket.IO
