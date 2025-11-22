@@ -187,9 +187,9 @@ router.post('/:id/respond', async (req, res) => {
 
 // 🔹 Email notification to coach
 const coachDoc = await Coach.findById(evaluation.coach._id);
-if (coachDoc?.emailAddress) {
+if (coachDoc?.email) {
   await sendMail(
-    coachDoc.emailAddress,
+    coachDoc.email,
     'Evaluation Response',
     `${playerName} responded to your evaluation from ${formattedDate}`,
     `<p>Player <strong>${playerName}</strong> responded to your evaluation from <em>${formattedDate}</em>.<br/>Login to view: <a href="https://cricket-academy-frontend-px1s.onrender.com">Academy Portal</a></p>`
