@@ -105,16 +105,25 @@ router.get('/performance-chart', verifyRole('player'), async (req, res) => {
 // ✅ PATCH player response to coach feedback + notify coach
 router.patch('/feedback-response/:sessionId', verifyRole('player'), async (req, res) => {
   try {
-    const { playerId, responseText } = req.body;
+    const { responseText } = req.body;
+    const playerId = req.user._id;
 
     const session = await Session.findById(req.params.sessionId);
     if (!session) return res.status(404).json({ error: 'Session not found' });
 
-    const entry = session.performance.find(p => p.player.toString() === playerId);
+    const entry = session.performance.find(p => p.player.equals(playerId));
     if (!entry) return res.status(404).json({ error: 'Feedback entry not found for player' });
 
     entry.playerResponse = responseText;
     await session.save();
+
+    res.json({ message: 'Response saved', session });
+  } catch (err) {
+    console.error('Error in feedback-response:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
     // ✅ Notify coach
     await Notification.create({
