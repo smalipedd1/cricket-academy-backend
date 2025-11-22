@@ -5,6 +5,7 @@ const Evaluation = require('../models/Evaluation');
 const Player = require('../models/Player');
 const Coach = require('../models/Coach');
 const Notification = require('../models/Notification');
+const { sendMail } = require('../utils/mailer');
 
 // 🔹 Create a new evaluation
 router.post('/', async (req, res) => {
