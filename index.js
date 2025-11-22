@@ -33,7 +33,7 @@ app.use('/api', require('./routes/auth'));
 app.use('/api/admin', require('./routes/admin'));
 //app.use('/api', require('./routes/admin'));
 app.use('/api/notifications', notificationRoutes);
-app.use('/api/sessions',require('./routes/sessions.js);
+app.use('/api/sessions',require('./routes/sessions);
 
 
 
