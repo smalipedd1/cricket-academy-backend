@@ -141,9 +141,9 @@ router.patch('/feedback-response/:sessionId', verifyRole('player'), async (req, 
 
 // 🔹 Email notification to coach
 const coachDoc = await Coach.findById(session.coach);
-if (coachDoc?.emailaddress) {
+if (coachDoc?.emailAddress) {
   await sendMail(
-    coachDoc.emailaddress,
+    coachDoc.emailAddress,
     'Session Feedback Response',
     `${req.user.firstName || req.user.username} responded to your feedback.`,
     `<p>Player <strong>${req.user.firstName || req.user.username}</strong> responded to your feedback for the session on <em>${new Date(session.date).toLocaleDateString()}</em>.<br/>Login to view: <a href="https://cricket-academy-frontend-px1s.onrender.com/login">Academy Portal</a></p>`
