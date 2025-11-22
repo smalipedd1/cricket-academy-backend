@@ -6,6 +6,7 @@ const Session = require('../models/Session');
 const Notification = require('../models/Notification');
 const PlayerDOB = require('../models/playerDOB');
 const { sendMail } = require('../utils/mailer');
+const Coach = require('../models/Coach');
 
 // ✅ GET player profile
 router.get('/profile', verifyRole('player'), async (req, res) => {
@@ -140,9 +141,9 @@ router.patch('/feedback-response/:sessionId', verifyRole('player'), async (req, 
 
 // 🔹 Email notification to coach
 const coachDoc = await Coach.findById(session.coach);
-if (coachDoc?.email) {
+if (coachDoc?.emailaddress) {
   await sendMail(
-    coachDoc.email,
+    coachDoc.emailaddress,
     'Session Feedback Response',
     `${req.user.firstName || req.user.username} responded to your feedback.`,
     `<p>Player <strong>${req.user.firstName || req.user.username}</strong> responded to your feedback for the session on <em>${new Date(session.date).toLocaleDateString()}</em>.<br/>Login to view: <a href="https://cricket-academy-frontend-px1s.onrender.com/login">Academy Portal</a></p>`
