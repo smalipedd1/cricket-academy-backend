@@ -5,8 +5,6 @@ const Session = require('../models/Session');
 const Player = require('../models/Player');
 const Coach = require('../models/Coach');
 const Notification = require('../models/Notification');
-//addition for email
-const { sendMail } = require('../utils/mailer');
 
 // ✅ GET all players (full list for coach)
 router.get('/player-list', verifyRole('coach'), async (req, res) => {
@@ -154,17 +152,6 @@ router.patch('/feedback/:sessionId', verifyRole('coach'), async (req, res) => {
         player: entry.playerId,
         message: `Coach ${req.user.firstName || req.user.username} submitted feedback for your session.`,
       });
-//addition for email notification
-const player = await Player.findById(entry.playerId);
-if (player?.emailAddress) {
-  await sendMail(
-    player.emailAddress,
-    'New Session Feedback',
-    `Coach ${req.user.firstName || req.user.username} submitted feedback for your session.`,
-    `<p>Coach <strong>${req.user.firstName || req.user.username}</strong> submitted feedback for your session on <em>${new Date(session.date).toLocaleDateString()}</em>.</p>`
-  );
-}
-//end addition for email notification
     }
 
     res.json({ message: 'Feedback saved', session });
