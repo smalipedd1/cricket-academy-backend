@@ -159,7 +159,7 @@ const player = await Player.findById(entry.playerId);
 if (player?.emailAddress) {
   await sendMail(
     player.emailAddress,
-    'New Session Feedback',
+    'New Cricket Session Feedback',
     `Coach ${req.user.firstName || req.user.username} submitted feedback for your session.`,
     `<p>Coach <strong>${req.user.firstName || req.user.username}</strong> submitted feedback for your session on <em>${new Date(session.date).toLocaleDateString()}</em>.</p>`
   );
@@ -167,7 +167,7 @@ if (player?.emailAddress) {
 //end addition for email notification
     }
 
-    res.json({ message: 'Feedback saved', session });
+    res.json({ message: 'Feedback saved and player notified', session });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

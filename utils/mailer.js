@@ -1,27 +1,19 @@
-const nodemailer = require('nodemailer');
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail', // or use SMTP config for Outlook, etc.
-  auth: {
-    user: process.env.EMAIL_USER, // your email address
-    pass: process.env.EMAIL_PASS, // app password or SMTP password
-  },
-  logger: true,
-  debug: true,
-});
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+console.log('Loaded API key:', process.env.SENDGRID_API_KEY?.slice(0,5));
 
 const sendMail = async (to, subject, text, html) => {
   try {
-    await transporter.sendMail({
-      from: `"Cricket Academy" <${process.env.EMAIL_USER}>`,
+    await sgMail.send({
       to,
+      from: process.env.EMAIL_USER, // must be verified sender
       subject,
       text,
       html,
     });
     console.log(`✅ Email sent to ${to}`);
   } catch (err) {
-    console.error('❌ Email send error:', err);
+    console.error('❌ Email send error:', err.response?.body || err);
   }
 };
 
