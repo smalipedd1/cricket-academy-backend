@@ -92,6 +92,30 @@ router.post('/coaches', verifyRole('admin'), async (req, res) => {
   }
 });
 
+// ✅ Update coach by ID (with password hashing)
+router.put('/coaches/:id', verifyRole('admin'), async (req, res) => {
+  try {
+    const updateData = { ...req.body };
+	console.log('Incoming coach update payload:', req.body);
+
+    if (updateData.password) {
+      updateData.password = await bcrypt.hash(updateData.password, 10);
+    }
+
+    const updatedCoach = await Coach.findByIdAndUpdate(req.params.id, updateData, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!updatedCoach) return res.status(404).json({ error: 'Coach not found' });
+    res.json(updatedCoach);
+  } catch (err) {
+    console.error('Coach update error:', err);
+    res.status(500).json({ error: 'Failed to update coach' });
+  }
+});
+
+
 // Get all players
 router.get('/players', verifyRole('admin'), async (req, res) => {
   try {
@@ -112,6 +136,29 @@ router.post('/players', verifyRole('admin'), async (req, res) => {
     res.status(500).json({ error: 'Failed to create player' });
   }
 });
+
+// ✅ Update player by ID (with password hashing)
+router.put('/players/:id', verifyRole('admin'), async (req, res) => {
+  try {
+    const updateData = { ...req.body };
+    if (updateData.password) {
+      updateData.password = await bcrypt.hash(updateData.password, 10);
+    }
+
+    const updatedPlayer = await Player.findByIdAndUpdate(req.params.id, updateData, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!updatedPlayer) return res.status(404).json({ error: 'Player not found' });
+    res.json(updatedPlayer);
+  } catch (err) {
+    console.error('Player update error:', err);
+    res.status(500).json({ error: 'Failed to update player' });
+  }
+});
+
+
 // Create session(s)
 router.post('/sessions', verifyRole('admin'), async (req, res) => {
   const {
@@ -221,5 +268,30 @@ router.get('/sessions', verifyRole('admin'), async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+//Update Ages for all players
+router.post('/update-all-ages', verifyRole('admin'), async (req, res) => {
+  try {
+    const records = await PlayerDOB.find({});
+    let updatedCount = 0;
+
+    for (const record of records) {
+      const dob = new Date(record.dob);
+      const today = new Date();
+      let age = today.getFullYear() - dob.getFullYear();
+      const m = today.getMonth() - dob.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+
+      await Player.findByIdAndUpdate(record.playerId, { age });
+      updatedCount++;
+    }
+
+    res.json({ message: `Updated ${updatedCount} player ages.` });
+  } catch (err) {
+    console.error('Bulk age update error:', err);
+    res.status(500).json({ error: 'Failed to update player ages.' });
+  }
+});
+
 
 module.exports = router;
