@@ -160,7 +160,7 @@ if (player?.emailAddress) {
   await sendMail(
     player.emailAddress,
     'New Cricket Session Feedback',
-    `Coach ${req.user.firstName || req.user.username} submitted feedback for your session.`,
+    `Coach ${req.user.firstName || req.user.username} submitted feedback for your session. Click on https://cricket-academy-frontend-px1s.onrender.com/login to login`,
     `<p>Coach <strong>${req.user.firstName || req.user.username}</strong> submitted feedback for your session on <em>${new Date(session.date).toLocaleDateString()}</em>.</p>`
   );
 }
