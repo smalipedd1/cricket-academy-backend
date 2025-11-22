@@ -68,6 +68,17 @@ router.post('/', async (req, res) => {
       isRead: false,
     });
 
+    // 🔹 ADD EMAIL NOTIFICATION HERE
+    if (playerExists?.emailAddress) {
+      await sendMail(
+        playerExists.emailAddress,
+        'New Evaluation Submitted',
+        `Coach ${coachExists.firstName} ${coachExists.lastName} has submitted an evaluation.`,
+        `<p>Coach <strong>${coachExists.firstName} ${coachExists.lastName}</strong> has submitted an evaluation for you on <em>${new Date().toLocaleDateString()}</em>.<br/>Login to view: <a href="https://cricket-academy-frontend-px1s.onrender.com/login">Academy Portal</a></p>`
+      );
+    }
+    // 🔹 END EMAIL NOTIFICATION
+
     const io = req.app.get('io');
     if (io) {
       io.to(player.toString()).emit('new-evaluation', {
