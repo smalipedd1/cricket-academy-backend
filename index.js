@@ -9,7 +9,8 @@ const notificationRoutes = require('./routes/notifications');
 const app = express(); // ✅ Must be declared before app.use()
 
 // ✅ CORS configuration to allow frontend domain
-const allowedOrigins = ['https://cricket-academy-frontend-px1s.onrender.com'];
+const allowedOrigins = ['https://cricket-academy-frontend-px1s.onrender.com',
+'https://cricacademy.com'];
 
 app.use(cors({
   origin: allowedOrigins,
