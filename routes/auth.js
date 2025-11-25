@@ -82,13 +82,12 @@ router.post('/change-password', async (req, res) => {
     const user = await Model.findById(id);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    // Check old password
+    // ✅ Verify old password
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) return res.status(400).json({ error: 'Old password incorrect' });
 
-    // Hash new password
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
+    // ✅ Assign new password directly (let Mongoose pre-save hook hash it)
+    user.password = newPassword;
 
     await user.save();
 
