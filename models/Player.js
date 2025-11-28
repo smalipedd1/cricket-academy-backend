@@ -14,14 +14,18 @@ const playerSchema = new mongoose.Schema({
 
   competitiveStartYear: {
     type: Number,
-    min: 1990,
-    max: new Date().getFullYear(),
+    min: 2010,
+    max: new Date().getFullYear() + 5, // ✅ allow up to 5 years in the future
     validate: {
       validator: function (year) {
         const currentYear = new Date().getFullYear();
-        return year >= 1990 && year <= currentYear;
+        const maxYear = currentYear + 5;
+        return year >= 2010 && year <= maxYear;
       },
-      message: 'Competitive start year must be between 1990 and the current year',
+      message: function (props) {
+        const maxYear = new Date().getFullYear() + 5;
+        return `Competitive start year must be between 2010 and ${maxYear}`;
+      },
     },
   },
 

@@ -14,14 +14,14 @@ const playerSchema = new mongoose.Schema({
 
   competitiveStartYear: {
     type: Number,
-    min: 1990,
+    min: 2010,
     max: new Date().getFullYear(),
     validate: {
       validator: function (year) {
         const currentYear = new Date().getFullYear();
-        return year >= 1990 && year <= currentYear;
+        return year >= 2010 && year <= currentYear;
       },
-      message: 'Competitive start year must be between 1990 and the current year',
+      message: 'Competitive start year must be between 2010 and the current year',
     },
   },
 

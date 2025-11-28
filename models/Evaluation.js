@@ -22,6 +22,22 @@ const evaluationSchema = new mongoose.Schema({
     default: 0,
   },
 
+  // ✅ New computed fields
+  ageCategory: {
+    type: String,
+    enum: ['Beginner', 'U11', 'U13', 'U15', 'U17', 'Adult', 'N/A'],
+    required: false,
+  },
+  targetGames: {
+    type: Number,
+    min: 0,
+    required: false,
+  },
+  gapPercent: {
+    type: Number,
+    min: 0,
+    required: false,
+  },
   feedback: {
     batting: {
       score: { type: Number, min: 1, max: 10 },
@@ -71,11 +87,11 @@ const evaluationSchema = new mongoose.Schema({
     },
   },
 
-status: {
-  type: String,
-  enum: ['Draft', 'Submitted'],
-  default: 'Draft'
-},
+  status: {
+    type: String,
+    enum: ['Draft', 'Submitted'],
+    default: 'Draft'
+  },
   coachComments: String,
   playerResponse: String,
   playerResponded: { type: Boolean, default: false },
