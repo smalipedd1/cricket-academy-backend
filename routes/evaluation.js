@@ -325,6 +325,28 @@ router.put('/:id/submit', async (req, res) => {
   }
 });
 
+// Get latest evaluation for a player
+router.get('/player/:playerId/latest', async (req, res) => {
+  try {
+    const { playerId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(playerId)) {
+      return res.status(400).json({ error: 'Invalid player ID format' });
+    }
+
+    const latest = await Evaluation.findOne({ player: playerId })
+      .sort({ createdAt: -1 })
+      .populate('coach', 'firstName lastName')
+      .populate('player', 'firstName lastName');
+
+    if (!latest) return res.json(null);
+
+    res.json(latest);
+  } catch (err) {
+    console.error('❌ Error fetching latest evaluation:', err);
+    res.status(500).json({ error: 'Failed to fetch latest evaluation' });
+  }
+});
+
 
 
 // 🔹 Helper to normalize category structure
