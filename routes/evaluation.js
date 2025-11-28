@@ -7,7 +7,7 @@ const Coach = require('../models/Coach');
 const Notification = require('../models/Notification');
 const { sendMail } = require('../utils/mailer');
 
-// 🔹 Create a new evaluation
+// 🔹 Create a new evaluation (Draft or Submitted)
 router.post('/', async (req, res) => {
   try {
     const {
@@ -19,6 +19,7 @@ router.post('/', async (req, res) => {
       gamesPlayed,
       totalRuns,
       totalWickets,
+      status = 'Submitted', // default if not provided
     } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(coach)) {
@@ -29,16 +30,13 @@ router.post('/', async (req, res) => {
     }
 
     const coachExists = await Coach.findById(coach);
-    if (!coachExists) {
-      return res.status(404).json({ error: 'Coach not found' });
-    }
+    if (!coachExists) return res.status(404).json({ error: 'Coach not found' });
 
     const playerExists = await Player.findById(player);
-    if (!playerExists) {
-      return res.status(404).json({ error: 'Player not found' });
-    }
+    if (!playerExists) return res.status(404).json({ error: 'Player not found' });
 
-    if (!feedback || !categories || !coachComments) {
+    // For submitted evaluations, enforce required fields
+    if (status === 'Submitted' && (!feedback || !categories || !coachComments)) {
       return res.status(400).json({ error: 'Missing required evaluation fields' });
     }
 
@@ -47,48 +45,50 @@ router.post('/', async (req, res) => {
       coach,
       feedback,
       categories,
-      coachComments: coachComments.trim(),
+      coachComments: coachComments?.trim() || '',
       gamesPlayed: Number(gamesPlayed) || 0,
       totalRuns: Number(totalRuns) || 0,
       totalWickets: Number(totalWickets) || 0,
+      status,
       notifications: {
-        playerNotified: true,
+        playerNotified: status === 'Submitted',
         coachNotified: false,
       },
     });
 
     await evaluation.save();
 
-    await Notification.create({
-      recipient: player,
-      recipientRole: 'player',
-      type: 'evaluation',
-      message: `New evaluation from Coach ${coachExists.firstName} ${coachExists.lastName}`,
-      link: `/player/session/${evaluation._id}`,
-      session: evaluation._id,
-      isRead: false,
-    });
-
-    // 🔹 ADD EMAIL NOTIFICATION HERE
-    if (playerExists?.emailAddress) {
-      await sendMail(
-        playerExists.emailAddress,
-        'New Evaluation Submitted',
-        `Coach ${coachExists.firstName} ${coachExists.lastName} has submitted an evaluation.`,
-        `<p>Coach <strong>${coachExists.firstName} ${coachExists.lastName}</strong> has submitted an evaluation for you on <em>${new Date().toLocaleDateString()}</em>.<br/>Login to view: <a href="https://cricket-academy-frontend-px1s.onrender.com">Academy Portal</a></p>`
-      );
-    }
-    // 🔹 END EMAIL NOTIFICATION
-
-    const io = req.app.get('io');
-    if (io) {
-      io.to(player.toString()).emit('new-evaluation', {
+    // 🔹 Only send notifications/emails if submitted
+    if (status === 'Submitted') {
+      await Notification.create({
+        recipient: player,
+        recipientRole: 'player',
+        type: 'evaluation',
         message: `New evaluation from Coach ${coachExists.firstName} ${coachExists.lastName}`,
-        link: `/player-dashboard?section=evaluations`,
+        link: `/player/session/${evaluation._id}`,
+        session: evaluation._id,
+        isRead: false,
       });
+
+      if (playerExists?.emailAddress) {
+        await sendMail(
+          playerExists.emailAddress,
+          'New Evaluation Submitted',
+          `Coach ${coachExists.firstName} ${coachExists.lastName} has submitted an evaluation.`,
+          `<p>Coach <strong>${coachExists.firstName} ${coachExists.lastName}</strong> has submitted an evaluation for you on <em>${new Date().toLocaleDateString()}</em>.<br/>Login to view: <a href="https://cricket-academy-frontend-px1s.onrender.com">Academy Portal</a></p>`
+        );
+      }
+
+      const io = req.app.get('io');
+      if (io) {
+        io.to(player.toString()).emit('new-evaluation', {
+          message: `New evaluation from Coach ${coachExists.firstName} ${coachExists.lastName}`,
+          link: `/player-dashboard?section=evaluations`,
+        });
+      }
     }
 
-    res.status(201).json({ message: 'Evaluation created', evaluation });
+    res.status(201).json({ message: `Evaluation ${status.toLowerCase()} successfully`, evaluation });
   } catch (err) {
     console.error('Evaluation creation error:', err);
     res.status(500).json({ error: err.message });
@@ -122,6 +122,7 @@ router.get('/player/:playerId', async (req, res) => {
       totalWickets: ev.totalWickets,
       playerResponse: ev.playerResponse,
       playerResponded: ev.playerResponded,
+      status: ev.status,
     }));
 
     res.json(formatted);
@@ -133,10 +134,6 @@ router.get('/player/:playerId', async (req, res) => {
 
 // 🔹 Player submits response
 router.post('/:id/respond', async (req, res) => {
-  console.log('🔍 Incoming player response');
-  console.log('Params:', req.params);
-  console.log('Body:', req.body);
-
   try {
     const { playerResponse } = req.body;
     const { id } = req.params;
@@ -149,20 +146,12 @@ router.post('/:id/respond', async (req, res) => {
       .populate('coach', 'firstName lastName')
       .populate('player', 'firstName lastName');
 
-    if (!evaluation) {
-      return res.status(404).json({ error: 'Evaluation not found' });
-    }
-
-    if (evaluation.playerResponded) {
-      return res.status(400).json({ error: 'Response already submitted' });
-    }
+    if (!evaluation) return res.status(404).json({ error: 'Evaluation not found' });
+    if (evaluation.playerResponded) return res.status(400).json({ error: 'Response already submitted' });
 
     evaluation.playerResponse = playerResponse.trim();
     evaluation.playerResponded = true;
-    evaluation.notifications = {
-      ...evaluation.notifications,
-      coachNotified: true,
-    };
+    evaluation.notifications = { ...evaluation.notifications, coachNotified: true };
 
     await evaluation.save();
 
@@ -185,16 +174,15 @@ router.post('/:id/respond', async (req, res) => {
         isRead: false,
       });
 
-// 🔹 Email notification to coach
-const coachDoc = await Coach.findById(evaluation.coach._id);
-if (coachDoc?.emailAddress) {
-  await sendMail(
-    coachDoc.emailAddress,
-    'Evaluation Response',
-    `${playerName} responded to your evaluation from ${formattedDate}`,
-    `<p>Player <strong>${playerName}</strong> responded to your evaluation from <em>${formattedDate}</em>.<br/>Login to view: <a href="https://cricket-academy-frontend-px1s.onrender.com">Academy Portal</a></p>`
-  );
-}
+      const coachDoc = await Coach.findById(evaluation.coach._id);
+      if (coachDoc?.emailAddress) {
+        await sendMail(
+          coachDoc.emailAddress,
+          'Evaluation Response',
+          `${playerName} responded to your evaluation from ${formattedDate}`,
+          `<p>Player <strong>${playerName}</strong> responded to your evaluation from <em>${formattedDate}</em>.<br/>Login to view: <a href="https://cricket-academy-frontend-px1s.onrender.com">Academy Portal</a></p>`
+        );
+      }
 
       const io = req.app.get('io');
       if (io) {
@@ -208,7 +196,6 @@ if (coachDoc?.emailAddress) {
     res.json({ message: 'Response submitted', evaluation });
   } catch (err) {
     console.error('❌ Player response error:', err.message);
-    console.error('🧠 Stack trace:', err.stack);
     res.status(500).json({ error: 'Failed to submit response' });
   }
 });
@@ -223,12 +210,8 @@ router.get('/coach-view', async (req, res) => {
 
     const formatted = evaluations.map((ev) => ({
       _id: ev._id,
-      playerName: ev.player
-        ? `${ev.player.firstName} ${ev.player.lastName}`
-        : 'Unknown',
-      coachName: ev.coach
-        ? `${ev.coach.firstName} ${ev.coach.lastName}`
-        : 'Unknown',
+      playerName: ev.player ? `${ev.player.firstName} ${ev.player.lastName}` : 'Unknown',
+      coachName: ev.coach ? `${ev.coach.firstName} ${ev.coach.lastName}` : 'Unknown',
       feedback: ev.feedback,
       categories: transformCategories(ev.categories),
       coachComments: ev.coachComments,
@@ -238,6 +221,7 @@ router.get('/coach-view', async (req, res) => {
       playerResponded: ev.playerResponded,
       playerResponse: ev.playerResponse,
       createdAt: ev.createdAt,
+      status: ev.status,
     }));
 
     res.json(formatted);
@@ -278,6 +262,7 @@ router.get('/:id', async (req, res) => {
       totalWickets: evaluation.totalWickets,
       playerResponse: evaluation.playerResponse,
       playerResponded: evaluation.playerResponded,
+      status: evaluation.status,
     };
 
     res.json(formatted);

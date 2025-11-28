@@ -71,6 +71,11 @@ const evaluationSchema = new mongoose.Schema({
     },
   },
 
+status: {
+  type: String,
+  enum: ['Draft', 'Submitted'],
+  default: 'Draft'
+},
   coachComments: String,
   playerResponse: String,
   playerResponded: { type: Boolean, default: false },
