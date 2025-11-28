@@ -272,6 +272,61 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Get all draft evaluations for a coach
+router.get('/coach-drafts/:coachId', async (req, res) => {
+  try {
+    const { coachId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(coachId)) {
+      return res.status(400).json({ error: 'Invalid coach ID format' });
+    }
+
+    const drafts = await Evaluation.find({ coach: coachId, status: 'Draft' })
+      .populate('player', 'firstName lastName')
+      .sort({ createdAt: -1 });
+
+    res.json(drafts);
+  } catch (err) {
+    console.error('❌ Error fetching drafts:', err);
+    res.status(500).json({ error: 'Failed to fetch drafts' });
+  }
+});
+
+// Update a draft evaluation to Submitted
+router.put('/:id/submit', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'Invalid evaluation ID format' });
+    }
+
+    const evaluation = await Evaluation.findById(id);
+    if (!evaluation) return res.status(404).json({ error: 'Evaluation not found' });
+    if (evaluation.status !== 'Draft') return res.status(400).json({ error: 'Evaluation is not a draft' });
+
+    // Update fields from request body
+    evaluation.feedback = req.body.feedback || evaluation.feedback;
+    evaluation.categories = req.body.categories || evaluation.categories;
+    evaluation.coachComments = req.body.coachComments || evaluation.coachComments;
+    evaluation.gamesPlayed = Number(req.body.gamesPlayed) || evaluation.gamesPlayed;
+    evaluation.totalRuns = Number(req.body.totalRuns) || evaluation.totalRuns;
+    evaluation.totalWickets = Number(req.body.totalWickets) || evaluation.totalWickets;
+
+    evaluation.status = 'Submitted';
+    evaluation.notifications = { playerNotified: true, coachNotified: false };
+
+    await evaluation.save();
+
+    res.json({ message: 'Draft submitted successfully', evaluation });
+  } catch (err) {
+    console.error('❌ Error submitting draft:', err);
+    res.status(500).json({ error: 'Failed to submit draft' });
+  }
+});
+
+
+
 // 🔹 Helper to normalize category structure
 function transformCategories(raw) {
   const output = {};
