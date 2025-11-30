@@ -32,25 +32,18 @@ router.get('/player/:id', verifyRole('coach'), async (req, res) => {
 // ✅ PATCH update player profile
 router.patch('/player/:id', verifyRole('coach'), async (req, res) => {
   try {
-    const updates = { ...req.body };
-
-    // ✅ Only hash if a new password is explicitly provided
-    if (updates.password && updates.password.trim() !== '') {
+    const updates = req.body;
+    if (updates.password) {
+      const bcrypt = require('bcrypt');
       updates.password = await bcrypt.hash(updates.password, 10);
-    } else {
-      delete updates.password; // prevent accidental rehash
     }
-
     const player = await Player.findByIdAndUpdate(req.params.id, updates, { new: true });
     if (!player) return res.status(404).json({ error: 'Player not found' });
-
-    res.json(player);
+    res.json({ message: 'Player updated successfully', player });
   } catch (err) {
-    console.error('Player update error:', err);
     res.status(500).json({ error: err.message });
   }
 });
-
 
 // ✅ GET dashboard UI data
 router.get('/dashboard-ui', verifyRole('coach'), async (req, res) => {
