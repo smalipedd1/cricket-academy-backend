@@ -92,17 +92,14 @@ router.post('/coaches', verifyRole('admin'), async (req, res) => {
   }
 });
 
-// ✅ Update coach by ID (with password hashing only if explicitly changed)
+// ✅ Update coach by ID (with password hashing)
 router.put('/coaches/:id', verifyRole('admin'), async (req, res) => {
   try {
     const updateData = { ...req.body };
-    console.log('Incoming coach update payload:', req.body);
+	console.log('Incoming coach update payload:', req.body);
 
-    // Only hash if a new password is explicitly provided
-    if (updateData.password && updateData.password.trim() !== '') {
+    if (updateData.password) {
       updateData.password = await bcrypt.hash(updateData.password, 10);
-    } else {
-      delete updateData.password; // prevent accidental rehash
     }
 
     const updatedCoach = await Coach.findByIdAndUpdate(req.params.id, updateData, {
@@ -140,15 +137,12 @@ router.post('/players', verifyRole('admin'), async (req, res) => {
   }
 });
 
-// ✅ Update player by ID (with password hashing only if explicitly changed)
+// ✅ Update player by ID (with password hashing)
 router.put('/players/:id', verifyRole('admin'), async (req, res) => {
   try {
     const updateData = { ...req.body };
-
-    if (updateData.password && updateData.password.trim() !== '') {
+    if (updateData.password) {
       updateData.password = await bcrypt.hash(updateData.password, 10);
-    } else {
-      delete updateData.password;
     }
 
     const updatedPlayer = await Player.findByIdAndUpdate(req.params.id, updateData, {
