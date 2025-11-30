@@ -38,6 +38,13 @@ const evaluationSchema = new mongoose.Schema({
     min: 0,
     required: false,
   },
+
+gameTime: {
+  type: String,
+  required: false,
+},
+
+
   feedback: {
     batting: {
       score: { type: Number, min: 1, max: 10 },
