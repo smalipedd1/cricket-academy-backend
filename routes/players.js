@@ -7,6 +7,8 @@ const Notification = require('../models/Notification');
 const PlayerDOB = require('../models/playerDOB');
 const { sendMail } = require('../utils/mailer');
 const Coach = require('../models/Coach');
+const bcrypt = require('bcrypt');
+
 
 // ✅ GET player profile
 router.get('/profile', verifyRole('player'), async (req, res) => {
