@@ -160,7 +160,7 @@ router.get('/coach-view', async (req, res) => {
       ageCategory: ev.ageCategory,
       targetGames: ev.targetGames,
       gapPercent: ev.gapPercent,
-      gameTime: gameTime,
+      gameTime: ev.gameTime,
       playerResponded: ev.playerResponded,
       playerResponse: ev.playerResponse,
       createdAt: ev.createdAt,

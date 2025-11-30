@@ -23,6 +23,7 @@ router.post('/', async (req, res) => {
       ageCategory,
       targetGames,
       gapPercent,
+      gameTime,
     } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(coach)) {
@@ -55,6 +56,7 @@ router.post('/', async (req, res) => {
       ageCategory,
       targetGames,
       gapPercent,
+      gameTime,
       notifications: {
         playerNotified: status === 'Submitted',
         coachNotified: false,
@@ -125,6 +127,7 @@ router.get('/player/:playerId', async (req, res) => {
       ageCategory: ev.ageCategory,
       targetGames: ev.targetGames,
       gapPercent: ev.gapPercent,
+      gameTime: ev.gameTime,
       playerResponse: ev.playerResponse,
       playerResponded: ev.playerResponded,
       status: ev.status,
@@ -157,6 +160,7 @@ router.get('/coach-view', async (req, res) => {
       ageCategory: ev.ageCategory,
       targetGames: ev.targetGames,
       gapPercent: ev.gapPercent,
+      gameTime: gameTime,
       playerResponded: ev.playerResponded,
       playerResponse: ev.playerResponse,
       createdAt: ev.createdAt,
@@ -192,7 +196,7 @@ router.put('/:id/submit', async (req, res) => {
     evaluation.ageCategory = req.body.ageCategory || evaluation.ageCategory;
     evaluation.targetGames = req.body.targetGames || evaluation.targetGames;
     evaluation.gapPercent = req.body.gapPercent || evaluation.gapPercent;
-
+    evaluation.gameTime = req.body.gameTime || evaluation.gameTime;
     evaluation.status = 'Submitted';
     evaluation.notifications = { playerNotified: true, coachNotified: false };
 
