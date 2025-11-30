@@ -7,6 +7,7 @@ const Coach = require('../models/Coach');
 const Notification = require('../models/Notification');
 //addition for email
 const { sendMail } = require('../utils/mailer');
+const bcrypt = require('bcrypt');
 
 // ✅ GET all players (full list for coach)
 router.get('/player-list', verifyRole('coach'), async (req, res) => {
