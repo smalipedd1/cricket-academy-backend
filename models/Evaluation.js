@@ -35,7 +35,6 @@ const evaluationSchema = new mongoose.Schema({
   },
   gapPercent: {
     type: Number,
-    min: 0,
     required: false,
   },
 
